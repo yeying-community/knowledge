@@ -1,40 +1,34 @@
-# 文档解析器注册表（Step 2）
+# SDD-04A 摄取解析器
 
-本步骤新增解析器注册表，统一处理不同文件类型并产出“可向量化文本”。
-
----
-
-## 1. 当前支持类型
-
-- `json`：提取 `text/content/resume/jd/segments` 字段，否则回退为 JSON 字符串
-- `txt` / `md`：直接作为文本
-- `html` / `htm`：剥离 HTML 标签后文本化
-
-未识别类型会回退为纯文本解析（UTF-8 忽略错误字符）。
+**项目**：yeying-知识库（RAG-中台）  
+**版本**：v2.1  
+**更新日期**：2026-02-02  
+**适用范围**：后端研发、数据接入
 
 ---
 
-## 2. 解析输出结构
+## 1. 解析器职责
 
-```json
-{
-  "text": "...",
-  "metadata": {"filename": "..."},
-  "file_type": "json",
-  "content_sha256": "..."
-}
-```
+将原始文件转换为可向量化的纯文本与元数据。
+
+入口：`backend/core/ingestion/parser_registry.py`
+
+---
+
+## 2. 内置支持类型
+
+- `txt` / `text`
+- `md` / `markdown`
+- `json`
+- `html` / `htm`
+
+不支持的类型会回退到文本解析。
 
 ---
 
 ## 3. 扩展方式
 
-1) 在 `parser_registry.py` 中注册新的解析器：
-   - `registry.register("pdf", parse_pdf)`
-2) 解析器签名：`parse(data: bytes, filename: Optional[str]) -> ParsedDocument`
+1) 在 `parser_registry.py` 注册新解析器  
+2) 实现 `ParsedDocument` 返回值（text / metadata / file_type）  
+3) 在摄取作业中使用对应 `file_type`
 
----
-
-## 4. 关联代码
-
-- 注册表：`backend/core/ingestion/parser_registry.py`

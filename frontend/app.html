@@ -35,6 +35,7 @@
           <span class="wallet-id" id="wallet-id-display">-</span>
         </div>
         <select id="app-switch"></select>
+        <button class="ghost" id="sidebar-toggle">收起侧栏</button>
         <div class="api-input">
           <input
             id="api-base"
@@ -49,7 +50,43 @@
       </div>
     </header>
 
-    <div class="layout single">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-card">
+          <h4>导航</h4>
+          <nav>
+            <button class="nav-item active" data-nav="overview">概览</button>
+            <button class="nav-item" data-nav="knowledge">知识库</button>
+            <button class="nav-item" data-nav="orchestration">业务编排</button>
+            <button class="nav-item" data-nav="plugin">插件开发</button>
+            <button class="nav-item" data-nav="private-db">私有库</button>
+            <button class="nav-item" data-nav="memory">记忆</button>
+            <button class="nav-item" data-nav="ingestion">摄取</button>
+            <button class="nav-item" data-nav="audit">审计</button>
+          </nav>
+        </div>
+        <div class="sidebar-card">
+          <h4>快速操作</h4>
+          <p>常用管理动作一键直达。</p>
+          <div class="sidebar-actions">
+            <button class="ghost" data-action="kb-new">新建 KB</button>
+            <button class="ghost" data-action="kb-schema">配置 Schema</button>
+            <button class="ghost" data-action="orchestration">业务编排</button>
+            <button class="ghost" data-action="plugin">插件开发</button>
+            <button class="ghost" data-action="doc-new">新建文档</button>
+            <button class="ghost" data-action="audit">审计日志</button>
+          </div>
+        </div>
+        <div class="sidebar-card admin-only hidden" data-admin-only>
+          <h4>超级管理员</h4>
+          <p>Schema、向量化与租户配置入口。</p>
+          <div class="pill-row">
+            <span class="pill">Schema 设计</span>
+            <span class="pill">向量字段</span>
+            <span class="pill">配置审计</span>
+          </div>
+        </div>
+      </aside>
       <main class="main">
         <section class="hero reveal" data-section="overview">
           <div class="hero-copy">
@@ -62,6 +99,13 @@
               <button class="ghost" id="app-ingestion">查看摄取日志</button>
               <button class="ghost" id="app-api-test">接口测试</button>
             </div>
+            <ul class="hero-steps">
+              <li>1) 新建/选择 KB，配置 collection 与检索参数</li>
+              <li>2) （超级管理员）设计 Schema 与向量化字段</li>
+              <li>3) 配置 Intent 与工作流</li>
+              <li>4) 在数据视图新增文档或导入数据</li>
+              <li>5) 在审计日志追踪配置变更</li>
+            </ul>
           </div>
           <div class="hero-metrics">
             <div class="metric-card">
@@ -148,8 +192,82 @@
                     <div class="schema-panel hidden" id="kb-schema-panel"></div>
                   </div>
                 </div>
+              <div class="sub-panel" style="grid-column: span 2;">
+                <div class="sub-panel-header">
+                  <div>
+                    <h3>知识库配置</h3>
+                    <p id="kb-config-subtitle">新建或调整当前应用的知识库配置。</p>
+                  </div>
+                  <button class="ghost" id="kb-config-new">新建 KB</button>
+                </div>
+                <form id="kb-config-form" class="doc-form">
+                  <div class="form-group">
+                    <label for="kb-config-key">KB Key</label>
+                    <input id="kb-config-key" type="text" placeholder="例如 jd_kb" />
+                  </div>
+                  <div class="form-group">
+                    <label for="kb-config-type">类型</label>
+                    <select id="kb-config-type">
+                      <option value="public_kb">公共知识库</option>
+                      <option value="user_upload">用户私有数据库</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="kb-config-collection">Collection</label>
+                    <input id="kb-config-collection" type="text" placeholder="weaviate collection 名称" />
+                  </div>
+                  <div class="form-group">
+                    <label for="kb-config-text-field">Text Field</label>
+                    <input id="kb-config-text-field" type="text" placeholder="默认 text/content" />
+                  </div>
+                  <div class="form-group">
+                    <label for="kb-config-topk">Top K</label>
+                    <input id="kb-config-topk" type="number" min="1" step="1" placeholder="默认 3" />
+                  </div>
+                  <div class="form-group">
+                    <label for="kb-config-weight">Weight</label>
+                    <input id="kb-config-weight" type="number" min="0" step="0.1" placeholder="默认 1.0" />
+                  </div>
+                  <div class="form-group">
+                    <label for="kb-config-allowed">允许应用过滤</label>
+                    <select id="kb-config-allowed">
+                      <option value="false">关闭</option>
+                      <option value="true">开启（推荐 用户私有数据库）</option>
+                    </select>
+                  </div>
+                  <div class="admin-only hidden" data-admin-only>
+                    <div class="admin-section">
+                      <div class="admin-section-header">
+                        <div>
+                          <h4>高级配置（超级管理员）</h4>
+                          <p>定义数据库字段 Schema 与向量化字段。</p>
+                        </div>
+                        <button type="button" class="ghost" id="kb-schema-add">新增字段</button>
+                      </div>
+                      <div class="table schema-table" id="kb-schema-table"></div>
+                      <div class="schema-summary">
+                        <div class="summary-block">
+                          <span class="detail-label">向量化字段</span>
+                          <div class="chip-row" id="kb-vector-fields"></div>
+                        </div>
+                        <div class="summary-block">
+                          <span class="detail-label">系统字段（用户私有数据库）</span>
+                          <div class="chip-row" id="kb-system-fields"></div>
+                        </div>
+                      </div>
+                      <p class="form-hint">勾选字段“向量化”后自动生成用于 embedding 的字段列表。</p>
+                      <p class="form-hint" id="kb-schema-hint"></p>
+                    </div>
+                  </div>
+                  <div class="form-actions">
+                    <button type="submit" class="primary" id="kb-config-save">保存配置</button>
+                    <button type="button" class="ghost" id="kb-config-delete">删除 KB</button>
+                  </div>
+                  <p class="form-hint" id="kb-config-hint"></p>
+                </form>
               </div>
             </div>
+          </div>
 
             <div class="tab-panel" data-tab-panel="data">
               <div class="panel nested" id="doc-panel">
@@ -178,10 +296,16 @@
                       <span class="detail-label" id="doc-page-info">-</span>
                     </div>
                     <div class="doc-toolbar-group">
-                      <span class="detail-label">会话</span>
-                      <input id="doc-session-filter" type="text" placeholder="session_id" />
+                      <span class="detail-label">业务用户</span>
+                      <input id="doc-data-wallet-filter" type="text" placeholder="data_wallet_id（业务用户 wallet_id）" />
+                    </div>
+                    <div class="doc-toolbar-group">
                       <span class="detail-label">私有库</span>
-                      <input id="doc-private-db-filter" type="text" placeholder="private_db_id" />
+                      <input id="doc-private-db-filter" type="text" placeholder="private_db_id（可选）" />
+                    </div>
+                    <div class="doc-toolbar-group">
+                      <span class="detail-label">会话</span>
+                      <input id="doc-session-filter" type="text" placeholder="session_id（可选）" />
                     </div>
                     <div class="doc-toolbar-group">
                       <span class="detail-label">已选</span>
@@ -198,6 +322,189 @@
                   <div class="table doc-table" id="doc-table"></div>
                   <p class="form-hint" id="doc-export-hint"></p>
                 </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <section class="panel-row reveal single" data-section="orchestration">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>业务编排</h2>
+                <p>面向业务租户的 Intent 与工作流配置。</p>
+              </div>
+              <div class="panel-tools">
+                <button class="ghost" id="intent-refresh">刷新意图</button>
+                <button class="ghost" id="workflow-refresh">刷新工作流</button>
+              </div>
+            </div>
+            <div class="kb-structure">
+              <div class="sub-panel">
+                <div class="sub-panel-header">
+                  <div>
+                    <h3>Intent 管理</h3>
+                    <p>配置对外意图、参数与描述。</p>
+                  </div>
+                  <button class="ghost" id="intent-add">新增 Intent</button>
+                </div>
+                <div class="table intent-table" id="intent-table"></div>
+                <div class="form-actions">
+                  <button class="primary" id="intent-save">保存 Intent</button>
+                  <button class="ghost" id="intent-reset">重置</button>
+                </div>
+                <p class="form-hint" id="intent-hint"></p>
+              </div>
+              <div class="sub-panel">
+                <div class="sub-panel-header">
+                  <div>
+                    <h3>工作流设计</h3>
+                    <p>定义业务流程与关联意图。</p>
+                  </div>
+                  <button class="ghost" id="workflow-add">新增流程</button>
+                </div>
+                <div class="table workflow-table" id="workflow-table"></div>
+                <div class="form-actions">
+                  <button class="primary" id="workflow-save">保存工作流</button>
+                  <button class="ghost" id="workflow-reset">重置</button>
+                </div>
+                <p class="form-hint" id="workflow-hint"></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-row reveal single" data-section="plugin">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>插件开发</h2>
+                <p>在前台维护 config / prompts / pipeline / intents / workflows。</p>
+              </div>
+              <div class="panel-tools">
+                <button class="ghost" id="plugin-refresh">刷新文件</button>
+                <button class="ghost" id="plugin-open-pipeline">打开 Pipeline</button>
+              </div>
+            </div>
+            <div class="kb-structure">
+              <div class="sub-panel">
+                <div class="sub-panel-header">
+                  <div>
+                    <h3>文件列表</h3>
+                    <p>选择文件进行编辑，保存后立即生效。</p>
+                  </div>
+                  <button class="ghost" id="plugin-new-prompt">新增 Prompt</button>
+                </div>
+                <div class="table plugin-file-table" id="plugin-file-table"></div>
+              </div>
+              <div class="sub-panel detail">
+                <div class="sub-panel-header">
+                  <div>
+                    <h3 id="plugin-editor-title">文件编辑器</h3>
+                    <p id="plugin-editor-subtitle">请选择文件开始编辑。</p>
+                  </div>
+                  <button class="ghost" id="plugin-reset">重置</button>
+                </div>
+                <div class="detail-grid">
+                  <div>
+                    <span class="detail-label">路径</span>
+                    <span class="detail-value" id="plugin-file-path">-</span>
+                  </div>
+                  <div>
+                    <span class="detail-label">类型</span>
+                    <span class="detail-value" id="plugin-file-kind">-</span>
+                  </div>
+                  <div>
+                    <span class="detail-label">大小</span>
+                    <span class="detail-value" id="plugin-file-size">-</span>
+                  </div>
+                  <div>
+                    <span class="detail-label">更新时间</span>
+                    <span class="detail-value" id="plugin-file-updated">-</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="plugin-editor">内容</label>
+                  <textarea id="plugin-editor" class="text-mono code-editor" rows="16" placeholder="选择左侧文件后开始编辑"></textarea>
+                </div>
+                <div class="form-actions">
+                  <button class="primary" id="plugin-save">保存文件</button>
+                </div>
+                <p class="form-hint" id="plugin-hint"></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-row reveal single" data-section="private-db">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>私有数据库</h2>
+                <p>为业务用户创建私有库并绑定会话。</p>
+              </div>
+              <div class="panel-tools">
+                <input id="private-db-owner-filter" type="text" placeholder="data_wallet_id 过滤" />
+                <button class="ghost" id="private-db-refresh">刷新</button>
+              </div>
+            </div>
+            <div class="kb-structure">
+              <div class="sub-panel">
+                <div class="sub-panel-header">
+                  <div>
+                    <h3>私有库列表</h3>
+                    <p>按业务用户钱包隔离。</p>
+                  </div>
+                </div>
+                <div class="table private-db-table" id="private-db-table"></div>
+              </div>
+              <div class="sub-panel detail">
+                <div class="sub-panel-header">
+                  <div>
+                    <h3 id="private-db-detail-title">私有库详情</h3>
+                    <p id="private-db-detail-subtitle">选择私有库查看会话。</p>
+                  </div>
+                  <button class="ghost" id="private-db-sessions-refresh">刷新会话</button>
+                </div>
+                <div class="detail-grid">
+                  <div>
+                    <span class="detail-label">Private DB</span>
+                    <span class="detail-value" id="private-db-detail-id">-</span>
+                  </div>
+                  <div>
+                    <span class="detail-label">业务钱包</span>
+                    <span class="detail-value" id="private-db-detail-owner">-</span>
+                  </div>
+                  <div>
+                    <span class="detail-label">状态</span>
+                    <span class="detail-value" id="private-db-detail-status">-</span>
+                  </div>
+                  <div>
+                    <span class="detail-label">创建时间</span>
+                    <span class="detail-value" id="private-db-detail-created">-</span>
+                  </div>
+                </div>
+                <div class="session-list" id="private-db-sessions-list"></div>
+                <form id="private-db-form" class="doc-form">
+                  <div class="form-group">
+                    <label for="private-db-owner">业务用户 wallet_id</label>
+                    <input id="private-db-owner" type="text" placeholder="data_wallet_id" />
+                  </div>
+                  <div class="form-group">
+                    <label for="private-db-id">private_db_id</label>
+                    <input id="private-db-id" type="text" placeholder="留空自动生成" />
+                  </div>
+                  <div class="form-group">
+                    <label for="private-db-sessions">绑定会话</label>
+                    <textarea id="private-db-sessions" rows="2" placeholder="session_id 多个用逗号分隔"></textarea>
+                  </div>
+                  <div class="form-actions">
+                    <button type="button" class="ghost" id="private-db-create">创建/获取私有库</button>
+                    <button type="button" class="primary" id="private-db-bind">绑定会话</button>
+                  </div>
+                  <p class="form-hint" id="private-db-hint"></p>
+                </form>
               </div>
             </div>
           </div>
@@ -279,29 +586,6 @@
           </div>
         </section>
 
-        <section class="panel-row reveal single" data-section="private-db">
-          <div class="panel">
-            <div class="panel-header">
-              <div>
-                <h2>私有库管理</h2>
-                <p>按应用查看私有库与会话绑定关系。</p>
-              </div>
-              <div class="panel-tools">
-                <span class="detail-label">Owner</span>
-                <input id="private-owner-filter" type="text" placeholder="owner_wallet_id（super）" />
-                <span class="detail-label">Session</span>
-                <input id="private-session-filter" type="text" placeholder="session_id" />
-                <span class="detail-label">私有库</span>
-                <input id="private-db-filter" type="text" placeholder="private_db_id" />
-                <button class="ghost" id="private-refresh">刷新</button>
-              </div>
-            </div>
-            <div class="table private-db-table" id="private-db-table"></div>
-            <p class="form-hint" id="private-db-hint"></p>
-          </div>
-        </section>
-
-
         <section class="panel-row reveal single" data-section="ingestion">
           <div class="panel">
             <div class="panel-header">
@@ -313,6 +597,46 @@
             </div>
             <div class="timeline" id="ingestion-timeline"></div>
             <p class="form-hint" id="ingestion-hint"></p>
+          </div>
+        </section>
+
+        <section class="panel-row reveal single" data-section="audit">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>审计日志</h2>
+                <p>数据库配置 / KB 变更记录。</p>
+              </div>
+              <div class="panel-tools">
+                <select id="audit-entity-type">
+                  <option value="">全部类型</option>
+                  <option value="kb_config">KB 配置</option>
+                  <option value="private_db">私有库</option>
+                  <option value="intent">Intent</option>
+                  <option value="workflow">工作流</option>
+                  <option value="plugin_file">插件文件</option>
+                </select>
+                <select id="audit-action">
+                  <option value="">全部操作</option>
+                  <option value="kb_config.create">KB 新建</option>
+                  <option value="kb_config.update">KB 更新</option>
+                  <option value="kb_config.delete">KB 删除</option>
+                  <option value="private_db.create">私有库创建</option>
+                  <option value="private_db.bind_session">私有库绑定</option>
+                  <option value="private_db.unbind_session">私有库解绑</option>
+                  <option value="intent.update">Intent 更新</option>
+                  <option value="workflow.update">工作流更新</option>
+                  <option value="plugin.update">插件文件更新</option>
+                </select>
+                <input id="audit-entity-id" type="text" placeholder="kb_key / private_db_id" />
+                <input id="audit-operator" type="text" placeholder="操作钱包 wallet_id" />
+                <button class="ghost" id="audit-refresh">刷新</button>
+                <button class="ghost" id="audit-export">导出</button>
+              </div>
+            </div>
+            <div class="table audit-table" id="audit-table"></div>
+            <div class="detail-log preformatted" id="audit-detail">选择日志查看详情。</div>
+            <p class="form-hint" id="audit-hint"></p>
           </div>
         </section>
       </main>

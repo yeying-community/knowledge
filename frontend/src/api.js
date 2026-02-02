@@ -1,11 +1,31 @@
-import { state } from "./state.js";
+import { state, setWalletId, setIsSuperAdmin } from "./state.js";
+import { authFetch } from "../assets/vendor/web3-bs.esm.js";
+
+const AUTH_TOKEN_KEY = "rag_auth_token";
+
+function normalizeBaseUrl(value) {
+  return (value || "").replace(/\/+$/, "");
+}
+
+function resolveAuthBaseUrl() {
+  const base = normalizeBaseUrl(state.apiBase);
+  return base ? `${base}/api/v1/public/auth` : "/api/v1/public/auth";
+}
 
 async function request(path, options = {}) {
   const url = state.apiBase ? `${state.apiBase}${path}` : path;
-  const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
+  const res = await authFetch(
+    url,
+    {
+      headers: { "Content-Type": "application/json" },
+      ...options,
+    },
+    {
+      baseUrl: resolveAuthBaseUrl(),
+      tokenStorageKey: AUTH_TOKEN_KEY,
+      storeToken: true,
+    }
+  );
   if (!res.ok) {
     const detail = await res.text();
     throw new Error(`Request failed (${res.status}): ${detail}`);
@@ -25,6 +45,16 @@ export function ping() {
   return request("/health");
 }
 
+export async function fetchProfile() {
+  const res = await request("/api/v1/public/profile");
+  const address = (res?.data?.address || "").toLowerCase();
+  if (address) {
+    setWalletId(address);
+  }
+  setIsSuperAdmin(Boolean(res?.data?.is_super_admin));
+  return res;
+}
+
 export function fetchApps(walletId) {
   const id = requireWalletId(walletId);
   return request(`/app/list?wallet_id=${encodeURIComponent(id)}`);
@@ -38,6 +68,51 @@ export function fetchAppStatus(appId, walletId) {
 export function fetchAppIntents(appId, walletId) {
   const id = requireWalletId(walletId);
   return request(`/app/${appId}/intents?wallet_id=${encodeURIComponent(id)}`);
+}
+
+export function fetchAppIntentDetails(appId, walletId) {
+  const id = requireWalletId(walletId);
+  return request(`/app/${appId}/intents/detail?wallet_id=${encodeURIComponent(id)}`);
+}
+
+export function updateAppIntents(appId, payload, walletId) {
+  const id = requireWalletId(walletId);
+  return request(`/app/${appId}/intents?wallet_id=${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchAppWorkflows(appId, walletId) {
+  const id = requireWalletId(walletId);
+  return request(`/app/${appId}/workflows?wallet_id=${encodeURIComponent(id)}`);
+}
+
+export function updateAppWorkflows(appId, payload, walletId) {
+  const id = requireWalletId(walletId);
+  return request(`/app/${appId}/workflows?wallet_id=${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchPluginFiles(appId, walletId) {
+  const id = requireWalletId(walletId);
+  return request(`/app/${appId}/plugin/files?wallet_id=${encodeURIComponent(id)}`);
+}
+
+export function fetchPluginFile(appId, path, walletId) {
+  const id = requireWalletId(walletId);
+  const params = new URLSearchParams({ wallet_id: id, path: path || "" });
+  return request(`/app/${appId}/plugin/file?${params.toString()}`);
+}
+
+export function updatePluginFile(appId, payload, walletId) {
+  const id = requireWalletId(walletId);
+  return request(`/app/${appId}/plugin/file?wallet_id=${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function registerApp(appId, walletId) {
@@ -56,6 +131,7 @@ export function fetchKBList(walletId) {
 export function fetchKBStats(appId, kbKey, walletId, options = {}) {
   const id = requireWalletId(walletId);
   const params = new URLSearchParams({ wallet_id: id });
+  if (options.dataWalletId) params.set("data_wallet_id", options.dataWalletId);
   if (options.privateDbId) params.set("private_db_id", options.privateDbId);
   if (options.sessionId) params.set("session_id", options.sessionId);
   return request(`/kb/${appId}/${kbKey}/stats?${params.toString()}`);
@@ -68,6 +144,7 @@ export function fetchKBDocuments(appId, kbKey, limit = 20, offset = 0, walletId,
     offset: String(offset),
     wallet_id: id,
   });
+  if (options.dataWalletId) params.set("data_wallet_id", options.dataWalletId);
   if (options.privateDbId) params.set("private_db_id", options.privateDbId);
   if (options.sessionId) params.set("session_id", options.sessionId);
   return request(`/kb/${appId}/${kbKey}/documents?${params.toString()}`);
@@ -99,6 +176,31 @@ export function fetchIngestionLogs(options = {}) {
   if (kbKey) params.set("kb_key", kbKey);
   if (status) params.set("status", status);
   return request(`/ingestion/logs?${params.toString()}`);
+}
+
+export function fetchAuditLogs(options = {}) {
+  const {
+    limit = 50,
+    offset = 0,
+    walletId,
+    appId,
+    entityType,
+    entityId,
+    action,
+    operatorWalletId,
+  } = options;
+  const id = requireWalletId(walletId);
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    wallet_id: id,
+  });
+  if (appId) params.set("app_id", appId);
+  if (entityType) params.set("entity_type", entityType);
+  if (entityId) params.set("entity_id", entityId);
+  if (action) params.set("action", action);
+  if (operatorWalletId) params.set("operator_wallet_id", operatorWalletId);
+  return request(`/audit/logs?${params.toString()}`);
 }
 
 export function createIngestionJob(payload, runNow = false, walletId) {
@@ -198,6 +300,24 @@ export function fetchPrivateDBSessions(privateDbId, appId, walletId) {
   return request(`/private_dbs/${privateDbId}/sessions?${params.toString()}`);
 }
 
+export function createPrivateDB(payload, walletId) {
+  const id = requireWalletId(walletId || payload?.wallet_id);
+  const body = { ...payload, wallet_id: id };
+  return request("/private_dbs", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function bindPrivateDBSessions(privateDbId, payload, walletId) {
+  const id = requireWalletId(walletId || payload?.wallet_id);
+  const body = { ...payload, wallet_id: id };
+  return request(`/private_dbs/${privateDbId}/bind`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export function unbindPrivateDBSession(privateDbId, sessionId, appId, walletId) {
   const id = requireWalletId(walletId);
   const params = new URLSearchParams({ wallet_id: id, app_id: appId });
@@ -233,6 +353,29 @@ export function updateKBDocument(appId, kbKey, docId, payload, walletId) {
 export function deleteKBDocument(appId, kbKey, docId, walletId) {
   const id = requireWalletId(walletId);
   return request(`/kb/${appId}/${kbKey}/documents/${docId}?wallet_id=${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+export function createKBConfig(appId, payload, walletId) {
+  const id = requireWalletId(walletId);
+  return request(`/kb/${appId}/configs?wallet_id=${encodeURIComponent(id)}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateKBConfig(appId, kbKey, payload, walletId) {
+  const id = requireWalletId(walletId);
+  return request(`/kb/${appId}/${kbKey}/config?wallet_id=${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteKBConfig(appId, kbKey, walletId) {
+  const id = requireWalletId(walletId);
+  return request(`/kb/${appId}/${kbKey}/config?wallet_id=${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
 }

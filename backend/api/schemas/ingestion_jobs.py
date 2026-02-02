@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class IngestionJobCreate(BaseModel):
-    wallet_id: str = Field(..., description="开发者钱包 ID")
+    wallet_id: Optional[str] = Field(None, description="开发者钱包 ID（兼容字段；推荐使用 Authorization）")
     data_wallet_id: Optional[str] = Field(None, description="数据归属钱包 ID（业务用户）")
     private_db_id: Optional[str] = Field(None, description="私有库 ID（session_id 二选一）")
     session_id: Optional[str] = Field(None, description="业务会话 ID（私有库绑定）")

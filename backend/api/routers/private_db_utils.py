@@ -7,13 +7,15 @@ from typing import Optional
 from fastapi import HTTPException
 
 from api.routers.owner import is_super_admin
+from api.auth.normalize import normalize_wallet_id
 
 
 def resolve_private_db_id(
     deps,
     *,
     app_id: str,
-    wallet_id: str,
+    operator_wallet_id: str,
+    data_wallet_id: str,
     private_db_id: Optional[str],
     session_id: Optional[str],
     allow_create: bool = False,
@@ -25,18 +27,22 @@ def resolve_private_db_id(
     """
     private_db_id = (private_db_id or "").strip() or None
     session_id = (session_id or "").strip() or None
-    super_admin = is_super_admin(deps, wallet_id)
+    data_wallet_id = normalize_wallet_id(data_wallet_id)
+    if not data_wallet_id:
+        raise HTTPException(status_code=400, detail="data_wallet_id is required")
+
+    super_admin = is_super_admin(deps, operator_wallet_id)
 
     if session_id:
         if private_db_id:
             deps.datasource.private_dbs.ensure_owner(
                 private_db_id=private_db_id,
                 app_id=app_id,
-                owner_wallet_id=wallet_id,
+                owner_wallet_id=data_wallet_id,
             )
             row = deps.datasource.private_dbs.get_by_session(
                 app_id=app_id,
-                owner_wallet_id=wallet_id,
+                owner_wallet_id=data_wallet_id,
                 session_id=session_id,
             )
             if row and row.get("private_db_id") != private_db_id:
@@ -50,20 +56,20 @@ def resolve_private_db_id(
                 deps.datasource.private_dbs.bind_session(
                     private_db_id=private_db_id,
                     app_id=app_id,
-                    owner_wallet_id=wallet_id,
+                    owner_wallet_id=data_wallet_id,
                     session_id=session_id,
                 )
         else:
             if allow_create:
                 private_db_id = deps.datasource.private_dbs.resolve_or_create(
                     app_id=app_id,
-                    owner_wallet_id=wallet_id,
+                    owner_wallet_id=data_wallet_id,
                     session_id=session_id,
                 )
             else:
                 row = deps.datasource.private_dbs.get_by_session(
                     app_id=app_id,
-                    owner_wallet_id=wallet_id,
+                    owner_wallet_id=data_wallet_id,
                     session_id=session_id,
                 )
                 if not row:
@@ -74,6 +80,12 @@ def resolve_private_db_id(
         deps.datasource.private_dbs.ensure_owner(
             private_db_id=private_db_id,
             app_id=app_id,
-            owner_wallet_id=wallet_id,
+            owner_wallet_id=data_wallet_id,
+        )
+    if allow_create and not private_db_id:
+        private_db_id = deps.datasource.private_dbs.resolve_or_create(
+            app_id=app_id,
+            owner_wallet_id=data_wallet_id,
+            session_id=None,
         )
     return private_db_id

@@ -31,8 +31,8 @@
       <main class="main">
         <section class="hero reveal">
           <div class="hero-copy">
-            <h1>钱包 ID 登录。</h1>
-            <p>使用开发者/管理员 wallet_id 进入控制台（不连接真实钱包）。</p>
+            <h1>连接钱包登录。</h1>
+            <p>使用 SIWE（签名挑战）登录控制台，后续请求将通过 Token 鉴权。</p>
           </div>
         </section>
 
@@ -41,17 +41,17 @@
             <div class="panel-header">
               <div>
                 <h2>登录信息</h2>
-                <p>输入 wallet_id 开始使用控制台。</p>
+                <p>点击按钮连接钱包并完成登录。</p>
               </div>
             </div>
             <form id="login-form" class="doc-form">
               <div class="form-group">
-                <label for="wallet-id">操作钱包 ID</label>
-                <input id="wallet-id" type="text" placeholder="例如 developer_01 或 super_admin" />
+                <label>钱包状态</label>
+                <div class="pill" id="wallet-status">未连接</div>
               </div>
               <div class="form-actions">
-                <button type="button" class="ghost" id="login-super">使用超级管理员</button>
-                <button type="submit" class="primary" id="login-submit">登录</button>
+                <button type="button" class="ghost" id="login-clear">清理登录</button>
+                <button type="submit" class="primary" id="login-submit">连接钱包并登录</button>
               </div>
               <p class="form-hint" id="login-hint"></p>
             </form>

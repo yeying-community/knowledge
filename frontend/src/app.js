@@ -11,19 +11,32 @@ import { mockData } from "./mock.js";
 import {
   ping,
   fetchApps,
+  fetchAppIntentDetails,
+  updateAppIntents,
+  fetchAppWorkflows,
+  updateAppWorkflows,
+  fetchPluginFiles,
+  fetchPluginFile,
+  updatePluginFile,
   fetchKBList,
   fetchKBStats,
   fetchKBDocuments,
   createKBDocument,
   updateKBDocument,
   deleteKBDocument,
+  createKBConfig,
+  updateKBConfig,
+  deleteKBConfig,
   fetchIngestionLogs,
-  fetchPrivateDBs,
-  fetchPrivateDBSessions,
-  unbindPrivateDBSession,
   fetchMemorySessions,
   fetchMemoryContexts,
   updateMemoryContext,
+  fetchAuditLogs,
+  fetchPrivateDBs,
+  fetchPrivateDBSessions,
+  createPrivateDB,
+  bindPrivateDBSessions,
+  unbindPrivateDBSession,
 } from "./api.js";
 
 const apiBaseInput = document.getElementById("api-base");
@@ -95,8 +108,9 @@ const docExportHint = document.getElementById("doc-export-hint");
 const docSelectedCount = document.getElementById("doc-selected-count");
 const docBulkExport = document.getElementById("doc-bulk-export");
 const docBulkDelete = document.getElementById("doc-bulk-delete");
-const docSessionFilter = document.getElementById("doc-session-filter");
+const docDataWalletFilter = document.getElementById("doc-data-wallet-filter");
 const docPrivateDbFilter = document.getElementById("doc-private-db-filter");
+const docSessionFilter = document.getElementById("doc-session-filter");
 const docForm = document.getElementById("doc-form");
 const docIdInput = document.getElementById("doc-id");
 const docTextInput = document.getElementById("doc-text");
@@ -114,6 +128,25 @@ const drawerDocUpdated = document.getElementById("drawer-doc-updated");
 const drawerDocCreated = document.getElementById("drawer-doc-created");
 const drawerDocFields = document.getElementById("drawer-doc-fields");
 const drawerDocMeta = document.getElementById("drawer-doc-meta");
+
+const kbConfigForm = document.getElementById("kb-config-form");
+const kbConfigNew = document.getElementById("kb-config-new");
+const kbConfigSubtitle = document.getElementById("kb-config-subtitle");
+const kbConfigKey = document.getElementById("kb-config-key");
+const kbConfigType = document.getElementById("kb-config-type");
+const kbConfigCollection = document.getElementById("kb-config-collection");
+const kbConfigTextField = document.getElementById("kb-config-text-field");
+const kbConfigTopk = document.getElementById("kb-config-topk");
+const kbConfigWeight = document.getElementById("kb-config-weight");
+const kbConfigAllowed = document.getElementById("kb-config-allowed");
+const kbConfigSave = document.getElementById("kb-config-save");
+const kbConfigDelete = document.getElementById("kb-config-delete");
+const kbConfigHint = document.getElementById("kb-config-hint");
+const kbSchemaTable = document.getElementById("kb-schema-table");
+const kbSchemaAdd = document.getElementById("kb-schema-add");
+const kbVectorFields = document.getElementById("kb-vector-fields");
+const kbSystemFields = document.getElementById("kb-system-fields");
+const kbSchemaHint = document.getElementById("kb-schema-hint");
 
 const memoryWalletFilter = document.getElementById("memory-wallet-filter");
 const memorySessionFilter = document.getElementById("memory-session-filter");
@@ -136,22 +169,113 @@ const memoryContextHint = document.getElementById("memory-context-hint");
 const memoryContextText = document.getElementById("memory-context-text");
 const memoryDetailPanel = document.getElementById("memory-detail-panel");
 
-const privateOwnerFilter = document.getElementById("private-owner-filter");
-const privateSessionFilter = document.getElementById("private-session-filter");
-const privateDbFilter = document.getElementById("private-db-filter");
-const privateDbRefresh = document.getElementById("private-refresh");
+const privateDbOwnerFilter = document.getElementById("private-db-owner-filter");
+const privateDbRefresh = document.getElementById("private-db-refresh");
 const privateDbTable = document.getElementById("private-db-table");
+const privateDbDetailTitle = document.getElementById("private-db-detail-title");
+const privateDbDetailSubtitle = document.getElementById("private-db-detail-subtitle");
+const privateDbDetailId = document.getElementById("private-db-detail-id");
+const privateDbDetailOwner = document.getElementById("private-db-detail-owner");
+const privateDbDetailStatus = document.getElementById("private-db-detail-status");
+const privateDbDetailCreated = document.getElementById("private-db-detail-created");
+const privateDbSessionsList = document.getElementById("private-db-sessions-list");
+const privateDbSessionsRefresh = document.getElementById("private-db-sessions-refresh");
+const privateDbForm = document.getElementById("private-db-form");
+const privateDbOwner = document.getElementById("private-db-owner");
+const privateDbIdInput = document.getElementById("private-db-id");
+const privateDbSessionsInput = document.getElementById("private-db-sessions");
+const privateDbCreate = document.getElementById("private-db-create");
+const privateDbBind = document.getElementById("private-db-bind");
 const privateDbHint = document.getElementById("private-db-hint");
 
+const auditEntityType = document.getElementById("audit-entity-type");
+const auditAction = document.getElementById("audit-action");
+const auditEntityId = document.getElementById("audit-entity-id");
+const auditOperator = document.getElementById("audit-operator");
+const auditRefresh = document.getElementById("audit-refresh");
+const auditExport = document.getElementById("audit-export");
+const auditTable = document.getElementById("audit-table");
+const auditDetail = document.getElementById("audit-detail");
+const auditHint = document.getElementById("audit-hint");
+
+const navItems = Array.from(document.querySelectorAll("[data-nav]"));
+const navActions = Array.from(document.querySelectorAll("[data-action]"));
+const sidebarToggle = document.getElementById("sidebar-toggle");
+const layoutRoot = document.querySelector(".layout");
+
+const intentTable = document.getElementById("intent-table");
+const intentAdd = document.getElementById("intent-add");
+const intentSave = document.getElementById("intent-save");
+const intentReset = document.getElementById("intent-reset");
+const intentHint = document.getElementById("intent-hint");
+const intentRefresh = document.getElementById("intent-refresh");
+
+const workflowTable = document.getElementById("workflow-table");
+const workflowAdd = document.getElementById("workflow-add");
+const workflowSave = document.getElementById("workflow-save");
+const workflowReset = document.getElementById("workflow-reset");
+const workflowHint = document.getElementById("workflow-hint");
+const workflowRefresh = document.getElementById("workflow-refresh");
+
+const pluginFileTable = document.getElementById("plugin-file-table");
+const pluginRefresh = document.getElementById("plugin-refresh");
+const pluginNewPrompt = document.getElementById("plugin-new-prompt");
+const pluginOpenPipeline = document.getElementById("plugin-open-pipeline");
+const pluginEditor = document.getElementById("plugin-editor");
+const pluginSave = document.getElementById("plugin-save");
+const pluginReset = document.getElementById("plugin-reset");
+const pluginHint = document.getElementById("plugin-hint");
+const pluginFilePath = document.getElementById("plugin-file-path");
+const pluginFileKind = document.getElementById("plugin-file-kind");
+const pluginFileSize = document.getElementById("plugin-file-size");
+const pluginFileUpdated = document.getElementById("plugin-file-updated");
+const pluginEditorTitle = document.getElementById("plugin-editor-title");
+const pluginEditorSubtitle = document.getElementById("plugin-editor-subtitle");
 
 const timeline = document.getElementById("ingestion-timeline");
 const ingestionExport = document.getElementById("ingestion-export");
 const ingestionHint = document.getElementById("ingestion-hint");
 
 let currentAppId = new URLSearchParams(window.location.search).get("app_id");
-let privateDbCache = [];
-let expandedPrivateDbId = null;
-const privateDbSessionsCache = new Map();
+let kbSchemaDraft = [];
+let intentDraft = [];
+let intentSnapshot = [];
+let workflowDraft = [];
+let workflowSnapshot = [];
+const RESERVED_USER_UPLOAD_FIELDS = [
+  "wallet_id",
+  "private_db_id",
+  "resume_id",
+  "jd_id",
+  "source_url",
+  "file_type",
+  "metadata_json",
+  "allowed_apps",
+];
+
+const SIDEBAR_COLLAPSED_KEY = "rag_sidebar_collapsed";
+
+const KB_TYPE_LABELS = {
+  public_kb: "公共知识库",
+  static_kb: "公共知识库",
+  user_upload: "用户私有数据库",
+};
+
+function normalizeKbType(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "public_kb";
+  if (raw === "static_kb") return "public_kb";
+  return raw;
+}
+
+function formatKbType(value) {
+  const key = normalizeKbType(value);
+  return KB_TYPE_LABELS[key] || key;
+}
+
+function isUserUploadType(value) {
+  return normalizeKbType(value) === "user_upload";
+}
 
 function setStatus(online) {
   statusDot.style.background = online ? "#39d98a" : "#ff6a88";
@@ -174,6 +298,7 @@ function renderIdentity() {
   if (memoryWalletFilter && !memoryWalletFilter.value) {
     memoryWalletFilter.value = "";
   }
+  toggleAdminOnly();
 }
 
 function updateUrl(appId) {
@@ -223,7 +348,15 @@ function applyData(data) {
   renderKbFilters();
   renderTimeline();
 
-  if (!state.selectedKb && state.knowledgeBases.length) {
+  if (state.selectedKb) {
+    const exists = state.knowledgeBases.some((kb) => kb.id === state.selectedKb);
+    if (exists) {
+      selectKb(state.selectedKb);
+      return;
+    }
+    state.selectedKb = null;
+  }
+  if (state.knowledgeBases.length) {
     selectKb(state.knowledgeBases[0].id);
   }
 }
@@ -276,8 +409,28 @@ async function loadData() {
     renderMemoryContextTable();
     updateMemoryDetail(null);
     resetMemoryContextForm(null);
-    privateDbCache = [];
+    state.auditLogs = [];
+    state.selectedAuditId = null;
+    renderAuditTable();
+    updateAuditDetail(null);
+    intentDraft = [];
+    intentSnapshot = [];
+    workflowDraft = [];
+    workflowSnapshot = [];
+    renderIntentTable();
+    renderWorkflowTable();
+    state.privateDbs = [];
+    state.privateDbSessions = [];
+    state.selectedPrivateDbId = null;
     renderPrivateDbTable();
+    updatePrivateDbDetail(null);
+    renderPrivateDbSessions();
+    state.pluginFiles = [];
+    state.selectedPluginPath = null;
+    state.pluginFileMeta = null;
+    state.pluginContentSnapshot = "";
+    renderPluginFileTable();
+    updatePluginEditorInfo(null);
     return;
   }
 
@@ -293,6 +446,18 @@ async function loadData() {
     const appInfo = (apps || []).find((app) => app.app_id === currentAppId) || null;
     if (!appInfo) {
       applyData({ apps, appInfo: null, knowledgeBases: [], ingestion: [], ingestionRaw: [], vectors: 0 });
+      intentDraft = [];
+      intentSnapshot = [];
+      workflowDraft = [];
+      workflowSnapshot = [];
+      renderIntentTable();
+      renderWorkflowTable();
+      state.pluginFiles = [];
+      state.selectedPluginPath = null;
+      state.pluginFileMeta = null;
+      state.pluginContentSnapshot = "";
+      renderPluginFileTable();
+      updatePluginEditorInfo(null);
       return;
     }
 
@@ -316,23 +481,34 @@ async function loadData() {
     const mappedKbs = appKbs.map((kb) => {
       const id = `${kb.app_id}:${kb.kb_key}`;
       const stat = statsMap.get(id) || { count: "-", chunks: "-" };
+      const schema = Array.isArray(kb.schema) ? kb.schema : [];
+      const vectorFields = Array.isArray(kb.vector_fields) ? kb.vector_fields : [];
+      const normalizedType = normalizeKbType(kb.kb_type || kb.type || "");
       return {
         id,
         app_id: kb.app_id,
         kb_key: kb.kb_key,
         text_field: kb.text_field || "text",
         name: kb.kb_key,
-        type: kb.kb_type || "kb",
+        type: normalizedType,
         collection: kb.collection || "-",
+        top_k: kb.top_k ?? 0,
+        weight: kb.weight ?? 0,
+        use_allowed_apps_filter: Boolean(kb.use_allowed_apps_filter),
+        schema,
+        vector_fields: vectorFields,
         docs: stat.count,
         chunks: stat.chunks,
         owner: kb.app_id,
-        access: kb.kb_type === "user_upload" ? "restricted" : "public",
+        access: isUserUploadType(normalizedType) ? "restricted" : "public",
         updated_at: kb.status ? `应用 ${kb.status}` : "未知",
         log: [
+          `类型 ${formatKbType(normalizedType)}`,
           `Top_k ${kb.top_k ?? "-"}`,
           `Weight ${kb.weight ?? "-"}`,
           kb.use_allowed_apps_filter ? "启用应用过滤" : "未启用应用过滤",
+          schema.length ? `Schema 字段 ${schema.length}` : "Schema 未配置",
+          vectorFields.length ? `向量字段 ${vectorFields.join(", ")}` : "向量字段 未配置",
         ],
         histogram: [40, 56, 32, 48],
       };
@@ -353,8 +529,12 @@ async function loadData() {
       ingestion: mapIngestion(ingestionLogs) || [],
       ingestionRaw,
     });
-    await loadMemorySessions();
     await loadPrivateDbs();
+    await loadAuditLogs();
+    await loadIntentConfigs();
+    await loadWorkflowConfigs();
+    await loadMemorySessions();
+    await loadPluginFiles();
   } catch (err) {
     applyData({ apps: [], appInfo: null, knowledgeBases: [], ingestion: [], ingestionRaw: [], vectors: 0 });
     state.memorySessions = [];
@@ -367,8 +547,28 @@ async function loadData() {
     renderMemoryContextTable();
     updateMemoryDetail(null);
     resetMemoryContextForm(null);
-    privateDbCache = [];
+    state.auditLogs = [];
+    state.selectedAuditId = null;
+    renderAuditTable();
+    updateAuditDetail(null);
+    intentDraft = [];
+    intentSnapshot = [];
+    workflowDraft = [];
+    workflowSnapshot = [];
+    renderIntentTable();
+    renderWorkflowTable();
+    state.privateDbs = [];
+    state.privateDbSessions = [];
+    state.selectedPrivateDbId = null;
     renderPrivateDbTable();
+    updatePrivateDbDetail(null);
+    renderPrivateDbSessions();
+    state.pluginFiles = [];
+    state.selectedPluginPath = null;
+    state.pluginFileMeta = null;
+    state.pluginContentSnapshot = "";
+    renderPluginFileTable();
+    updatePluginEditorInfo(null);
   }
 }
 
@@ -396,6 +596,7 @@ function renderKbTable() {
       "暂无知识库",
       "当前应用还没有可用的知识库，请先完成应用注册与数据摄取。"
     );
+    resetKbConfigForm();
     return;
   }
 
@@ -413,14 +614,15 @@ function renderKbTable() {
   const body = rows
     .map((kb) => {
       const active = state.selectedKb === kb.id ? "active" : "";
-      const badge = kb.access === "restricted" ? "受限" : "公开";
+      const badge = kb.access === "restricted" ? "私有" : "公共";
+      const typeLabel = formatKbType(kb.type);
       return `
         <div class="table-row ${active}" data-kb="${kb.id}">
           <div>
             <strong>${kb.name}</strong>
             <div class="badge">${kb.owner}</div>
           </div>
-          <div>${kb.type}</div>
+          <div>${escapeHtml(typeLabel)}</div>
           <div>${kb.docs}</div>
           <div>${kb.chunks}</div>
           <div>${kb.collection}</div>
@@ -454,7 +656,8 @@ function renderKbFilters() {
     const chips = items
       .map((item) => {
         const checked = selected.includes(item) ? "checked" : "";
-        return `<label class="filter-chip"><input type="checkbox" data-filter="${key}" value="${item}" ${checked} />${item}</label>`;
+        const label = key === "types" ? formatKbType(item) : item;
+        return `<label class="filter-chip"><input type="checkbox" data-filter="${key}" value="${item}" ${checked} />${escapeHtml(label)}</label>`;
       })
       .join("");
     return `<div class="filter-group"><span>${label}</span>${chips}</div>`;
@@ -516,12 +719,12 @@ async function selectKb(id) {
   }
 
   detailTitle.textContent = kb.name;
-  const scopeLabel = kb.type === "user_upload" ? "用户隔离" : "共享";
+  const scopeLabel = isUserUploadType(kb.type) ? "用户隔离" : "公共共享";
   detailSubtitle.textContent = `更新 ${kb.updated_at} · 应用 ${kb.owner} · ${scopeLabel}`;
   detailCollection.textContent = kb.collection;
   detailDocs.textContent = kb.docs;
   detailChunks.textContent = kb.chunks;
-  detailAccess.textContent = kb.access === "restricted" ? "受限（用户隔离）" : "公开（共享）";
+  detailAccess.textContent = kb.access === "restricted" ? "用户私有数据库（隔离）" : "公共知识库（共享）";
   detailLog.innerHTML = kb.log.map((line) => `> ${line}`).join("<br>");
 
   kb.histogram.forEach((value, index) => {
@@ -529,6 +732,7 @@ async function selectKb(id) {
     chartBars[index].style.height = `${height}%`;
   });
 
+  setKbConfigForm(kb);
   await loadDocuments();
 }
 
@@ -555,14 +759,20 @@ async function loadDocuments() {
   }
   docSubtitle.textContent = `集合 ${kb.collection} · 文本字段 ${kb.text_field} · 点击行查看详情`;
   try {
-    const { sessionId, privateDbId } = getDocFilters();
+    const { dataWalletId, privateDbId, sessionId } = getDocFilters();
+    if (sessionId && !dataWalletId) {
+      if (docExportHint) {
+        docExportHint.textContent = "使用 session_id 过滤时需先填写业务用户 wallet_id。";
+      }
+      return;
+    }
     const res = await fetchKBDocuments(
       kb.app_id,
       kb.kb_key,
       state.docPageSize,
       state.docPageOffset,
       state.walletId,
-      { sessionId, privateDbId }
+      { dataWalletId, privateDbId, sessionId }
     );
     state.documents = res.items || [];
     state.docTotal = res.total ?? 0;
@@ -583,8 +793,9 @@ async function loadDocuments() {
         ? `${labelColumns.slice(0, 6).join(", ")} ...`
         : labelColumns.join(", ");
     const filterNotes = [];
-    if (sessionId) filterNotes.push(`session ${sessionId}`);
+    if (dataWalletId) filterNotes.push(`data_wallet ${dataWalletId}`);
     if (privateDbId) filterNotes.push(`private_db ${privateDbId}`);
+    if (sessionId) filterNotes.push(`session ${sessionId}`);
     const filterLabel = filterNotes.length ? ` · 过滤: ${filterNotes.join(" / ")}` : "";
     docSubtitle.textContent = `集合 ${kb.collection} · 文本字段 ${kb.text_field} · 总数 ${state.docTotal} · 列: ${columnsLabel}${filterLabel} · 点击行查看详情`;
     renderDocTable();
@@ -1226,6 +1437,1357 @@ function renderDocMeta(props, textField) {
     .join("<br />");
 }
 
+function setHint(el, text, tone = "") {
+  if (!el) return;
+  el.textContent = text || "";
+  el.classList.toggle("text-danger", tone === "error");
+}
+
+function toggleAdminOnly() {
+  const admin = isSuperAdmin();
+  document.querySelectorAll("[data-admin-only]").forEach((el) => {
+    el.classList.toggle("hidden", !admin);
+  });
+  renderKbSchemaEditor();
+  updateSchemaStatus();
+}
+
+function normalizeSchemaEntry(item) {
+  const entry = item || {};
+  return {
+    name: String(entry.name || "").trim(),
+    data_type: String(entry.data_type || entry.type || "text").trim() || "text",
+    vectorize: Boolean(entry.vectorize),
+    description: String(entry.description || "").trim(),
+  };
+}
+
+function getVectorFieldsFromSchema() {
+  return kbSchemaDraft
+    .filter((field) => field.name && field.vectorize)
+    .map((field) => field.name);
+}
+
+function renderVectorFields() {
+  if (!kbVectorFields) return;
+  const fields = getVectorFieldsFromSchema();
+  if (!fields.length) {
+    kbVectorFields.innerHTML = "<span class=\"detail-label\">未选择</span>";
+    return;
+  }
+  kbVectorFields.innerHTML = fields.map((field) => `<span class="chip">${escapeHtml(field)}</span>`).join("");
+}
+
+function renderSystemFields(kbType) {
+  if (!kbSystemFields) return;
+  if (!isUserUploadType(kbType)) {
+    kbSystemFields.innerHTML = "<span class=\"detail-label\">无</span>";
+    return;
+  }
+  kbSystemFields.innerHTML = RESERVED_USER_UPLOAD_FIELDS.map((field) => `<span class="chip">${field}</span>`).join(
+    ""
+  );
+}
+
+function updateSchemaStatus() {
+  renderVectorFields();
+  const kbType = (kbConfigType?.value || "").trim();
+  renderSystemFields(kbType);
+  if (!kbSchemaHint) return;
+  const textField = (kbConfigTextField?.value || "text").trim() || "text";
+  const schemaPayload = getSchemaPayload();
+  const warnings = [];
+  const errors = [];
+  const seen = new Map();
+  const reserved = new Set(RESERVED_USER_UPLOAD_FIELDS.map((field) => field.toLowerCase()));
+
+  schemaPayload.forEach((field) => {
+    const key = field.name.toLowerCase();
+    if (seen.has(key)) {
+      errors.push(`字段名重复: ${field.name}`);
+    }
+    seen.set(key, true);
+    if (isUserUploadType(kbType) && reserved.has(key)) {
+      errors.push(`字段名与系统字段冲突: ${field.name}`);
+    }
+  });
+
+  if (schemaPayload.length && !seen.has(textField.toLowerCase())) {
+    warnings.push(`主文本字段 ${textField} 不在 Schema 中`);
+  }
+  if (!schemaPayload.length) {
+    warnings.push("尚未配置 Schema 字段");
+  }
+  if (!getVectorFieldsFromSchema().length) {
+    warnings.push("未勾选向量化字段，将默认使用主文本字段向量化");
+  }
+
+  const message = [...errors, ...warnings].join("；");
+  kbSchemaHint.textContent = message || "Schema 配置完整。";
+  kbSchemaHint.classList.toggle("text-danger", errors.length > 0);
+}
+
+function renderKbSchemaEditor() {
+  if (!kbSchemaTable) return;
+  if (!isSuperAdmin()) {
+    kbSchemaTable.innerHTML = "";
+    updateSchemaStatus();
+    return;
+  }
+
+  const header = `
+    <div class="table-row header">
+      <div>字段名</div>
+      <div>类型</div>
+      <div>向量化</div>
+      <div>备注</div>
+      <div>操作</div>
+    </div>
+  `;
+
+  if (!kbSchemaDraft.length) {
+    kbSchemaTable.innerHTML = header + `
+      <div class="table-row">
+        <div class="cell-muted">暂无字段</div>
+        <div>-</div>
+        <div>-</div>
+        <div class="cell-muted">点击“新增字段”开始配置</div>
+        <div>-</div>
+      </div>
+    `;
+    updateSchemaStatus();
+    return;
+  }
+
+  const rows = kbSchemaDraft
+    .map((field, index) => {
+      const safeName = escapeHtml(field.name || "");
+      const safeDesc = escapeHtml(field.description || "");
+      return `
+        <div class="table-row" data-schema-row="${index}">
+          <div><input type="text" value="${safeName}" data-schema-field="name" data-index="${index}" /></div>
+          <div>
+            <select data-schema-field="data_type" data-index="${index}">
+              <option value="text" ${field.data_type === "text" ? "selected" : ""}>text</option>
+              <option value="int" ${field.data_type === "int" ? "selected" : ""}>int</option>
+              <option value="number" ${field.data_type === "number" ? "selected" : ""}>number</option>
+              <option value="boolean" ${field.data_type === "boolean" ? "selected" : ""}>boolean</option>
+              <option value="date" ${field.data_type === "date" ? "selected" : ""}>date</option>
+            </select>
+          </div>
+          <div>
+            <label class="filter-chip">
+              <input type="checkbox" data-schema-field="vectorize" data-index="${index}" ${field.vectorize ? "checked" : ""} />
+              启用
+            </label>
+          </div>
+          <div><input type="text" value="${safeDesc}" data-schema-field="description" data-index="${index}" /></div>
+          <div><button type="button" class="ghost" data-schema-remove="${index}">删除</button></div>
+        </div>
+      `;
+    })
+    .join("");
+
+  kbSchemaTable.innerHTML = header + rows;
+
+  kbSchemaTable.querySelectorAll("[data-schema-field]").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const index = Number(event.target.dataset.index);
+      const field = event.target.dataset.schemaField;
+      if (Number.isNaN(index) || !kbSchemaDraft[index]) return;
+      if (field === "vectorize") {
+        kbSchemaDraft[index].vectorize = Boolean(event.target.checked);
+      } else {
+        kbSchemaDraft[index][field] = String(event.target.value || "").trim();
+      }
+      updateSchemaStatus();
+    });
+  });
+
+  kbSchemaTable.querySelectorAll("[data-schema-remove]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const index = Number(btn.dataset.schemaRemove);
+      if (Number.isNaN(index)) return;
+      kbSchemaDraft.splice(index, 1);
+      renderKbSchemaEditor();
+    });
+  });
+
+  updateSchemaStatus();
+}
+
+function loadKbSchemaDraft(kb) {
+  const schema = Array.isArray(kb?.schema) ? kb.schema.map(normalizeSchemaEntry) : [];
+  const vectorSet = new Set((kb?.vector_fields || []).map((field) => String(field || "").toLowerCase()));
+  schema.forEach((field) => {
+    if (vectorSet.has(String(field.name || "").toLowerCase())) {
+      field.vectorize = true;
+    }
+  });
+  kbSchemaDraft = schema;
+  renderKbSchemaEditor();
+  updateSchemaStatus();
+}
+
+function getSchemaPayload() {
+  return kbSchemaDraft
+    .map((field) => normalizeSchemaEntry(field))
+    .filter((field) => field.name)
+    .map((field) => {
+      const payload = {
+        name: field.name,
+        data_type: field.data_type || "text",
+        vectorize: Boolean(field.vectorize),
+      };
+      if (field.description) {
+        payload.description = field.description;
+      }
+      return payload;
+    });
+}
+
+function validateSchemaDraft() {
+  const kbType = (kbConfigType?.value || "").trim();
+  const schemaPayload = getSchemaPayload();
+  const seen = new Set();
+  const duplicates = new Set();
+  const reserved = new Set(RESERVED_USER_UPLOAD_FIELDS.map((field) => field.toLowerCase()));
+  const reservedUsed = new Set();
+
+  schemaPayload.forEach((field) => {
+    const key = field.name.toLowerCase();
+    if (seen.has(key)) duplicates.add(field.name);
+    seen.add(key);
+    if (isUserUploadType(kbType) && reserved.has(key)) reservedUsed.add(field.name);
+  });
+
+  if (duplicates.size) {
+    throw new Error(`Schema 字段名重复: ${Array.from(duplicates).join(", ")}`);
+  }
+  if (reservedUsed.size) {
+    throw new Error(`Schema 字段名与系统字段冲突: ${Array.from(reservedUsed).join(", ")}`);
+  }
+}
+
+function normalizeIntentEntry(item) {
+  const entry = item || {};
+  const params = Array.isArray(entry.params) ? entry.params : [];
+  return {
+    name: String(entry.name || "").trim(),
+    description: String(entry.description || "").trim(),
+    params: params.map((p) => String(p || "").trim()).filter(Boolean),
+    exposed: entry.exposed !== false,
+  };
+}
+
+function normalizeWorkflowEntry(item) {
+  const entry = item || {};
+  const intents = Array.isArray(entry.intents) ? entry.intents : [];
+  return {
+    name: String(entry.name || "").trim(),
+    description: String(entry.description || "").trim(),
+    intents: intents.map((p) => String(p || "").trim()).filter(Boolean),
+    enabled: entry.enabled !== false,
+  };
+}
+
+function parseCsvList(value) {
+  return String(value || "")
+    .split(/[,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function cloneList(value) {
+  try {
+    return JSON.parse(JSON.stringify(value || []));
+  } catch {
+    return [];
+  }
+}
+
+function renderIntentTable() {
+  if (!intentTable) return;
+  const header = `
+    <div class="table-row header">
+      <div>名称</div>
+      <div>公开</div>
+      <div>参数</div>
+      <div>描述</div>
+      <div>操作</div>
+    </div>
+  `;
+  if (!intentDraft.length) {
+    intentTable.innerHTML = header + `
+      <div class="table-row">
+        <div class="cell-muted">暂无 Intent</div>
+        <div>-</div>
+        <div>-</div>
+        <div class="cell-muted">点击“新增 Intent”开始配置</div>
+        <div>-</div>
+      </div>
+    `;
+    return;
+  }
+  const rows = intentDraft
+    .map((intent, index) => {
+      const safeName = escapeHtml(intent.name || "");
+      const safeDesc = escapeHtml(intent.description || "");
+      const params = escapeHtml((intent.params || []).join(", "));
+      return `
+        <div class="table-row" data-intent-row="${index}">
+          <div><input type="text" value="${safeName}" data-intent-field="name" data-index="${index}" /></div>
+          <div>
+            <label class="filter-chip">
+              <input type="checkbox" data-intent-field="exposed" data-index="${index}" ${intent.exposed ? "checked" : ""} />
+              对外
+            </label>
+          </div>
+          <div><input type="text" value="${params}" data-intent-field="params" data-index="${index}" placeholder="param_a, param_b" /></div>
+          <div><input type="text" value="${safeDesc}" data-intent-field="description" data-index="${index}" /></div>
+          <div><button type="button" class="ghost" data-intent-remove="${index}">删除</button></div>
+        </div>
+      `;
+    })
+    .join("");
+  intentTable.innerHTML = header + rows;
+  intentTable.querySelectorAll("[data-intent-field]").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const index = Number(event.target.dataset.index);
+      const field = event.target.dataset.intentField;
+      if (Number.isNaN(index) || !intentDraft[index]) return;
+      if (field === "exposed") {
+        intentDraft[index].exposed = Boolean(event.target.checked);
+      } else if (field === "params") {
+        intentDraft[index].params = parseCsvList(event.target.value);
+      } else {
+        intentDraft[index][field] = String(event.target.value || "").trim();
+      }
+    });
+  });
+  intentTable.querySelectorAll("[data-intent-remove]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const index = Number(btn.dataset.intentRemove);
+      if (Number.isNaN(index)) return;
+      intentDraft.splice(index, 1);
+      renderIntentTable();
+    });
+  });
+}
+
+function renderWorkflowTable() {
+  if (!workflowTable) return;
+  const header = `
+    <div class="table-row header">
+      <div>名称</div>
+      <div>启用</div>
+      <div>关联意图</div>
+      <div>描述</div>
+      <div>操作</div>
+    </div>
+  `;
+  if (!workflowDraft.length) {
+    workflowTable.innerHTML = header + `
+      <div class="table-row">
+        <div class="cell-muted">暂无流程</div>
+        <div>-</div>
+        <div>-</div>
+        <div class="cell-muted">点击“新增流程”开始配置</div>
+        <div>-</div>
+      </div>
+    `;
+    return;
+  }
+  const rows = workflowDraft
+    .map((flow, index) => {
+      const safeName = escapeHtml(flow.name || "");
+      const safeDesc = escapeHtml(flow.description || "");
+      const intents = escapeHtml((flow.intents || []).join(", "));
+      return `
+        <div class="table-row" data-workflow-row="${index}">
+          <div><input type="text" value="${safeName}" data-workflow-field="name" data-index="${index}" /></div>
+          <div>
+            <label class="filter-chip">
+              <input type="checkbox" data-workflow-field="enabled" data-index="${index}" ${flow.enabled ? "checked" : ""} />
+              启用
+            </label>
+          </div>
+          <div><input type="text" value="${intents}" data-workflow-field="intents" data-index="${index}" placeholder="intent_a, intent_b" /></div>
+          <div><input type="text" value="${safeDesc}" data-workflow-field="description" data-index="${index}" /></div>
+          <div><button type="button" class="ghost" data-workflow-remove="${index}">删除</button></div>
+        </div>
+      `;
+    })
+    .join("");
+  workflowTable.innerHTML = header + rows;
+  workflowTable.querySelectorAll("[data-workflow-field]").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const index = Number(event.target.dataset.index);
+      const field = event.target.dataset.workflowField;
+      if (Number.isNaN(index) || !workflowDraft[index]) return;
+      if (field === "enabled") {
+        workflowDraft[index].enabled = Boolean(event.target.checked);
+      } else if (field === "intents") {
+        workflowDraft[index].intents = parseCsvList(event.target.value);
+      } else {
+        workflowDraft[index][field] = String(event.target.value || "").trim();
+      }
+    });
+  });
+  workflowTable.querySelectorAll("[data-workflow-remove]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const index = Number(btn.dataset.workflowRemove);
+      if (Number.isNaN(index)) return;
+      workflowDraft.splice(index, 1);
+      renderWorkflowTable();
+    });
+  });
+}
+
+function loadIntentDraft(intents) {
+  intentDraft = (intents || []).map(normalizeIntentEntry);
+  intentSnapshot = cloneList(intentDraft);
+  renderIntentTable();
+}
+
+function loadWorkflowDraft(workflows) {
+  workflowDraft = (workflows || []).map(normalizeWorkflowEntry);
+  workflowSnapshot = cloneList(workflowDraft);
+  renderWorkflowTable();
+}
+
+function validateIntentDraft() {
+  const names = new Set();
+  const duplicates = new Set();
+  intentDraft.forEach((intent) => {
+    const key = String(intent.name || "").trim();
+    if (!key) return;
+    const lower = key.toLowerCase();
+    if (names.has(lower)) duplicates.add(key);
+    names.add(lower);
+  });
+  if (duplicates.size) {
+    throw new Error(`Intent 名称重复: ${Array.from(duplicates).join(", ")}`);
+  }
+}
+
+function validateWorkflowDraft() {
+  const names = new Set();
+  const duplicates = new Set();
+  workflowDraft.forEach((flow) => {
+    const key = String(flow.name || "").trim();
+    if (!key) return;
+    const lower = key.toLowerCase();
+    if (names.has(lower)) duplicates.add(key);
+    names.add(lower);
+  });
+  if (duplicates.size) {
+    throw new Error(`流程名称重复: ${Array.from(duplicates).join(", ")}`);
+  }
+}
+
+async function loadIntentConfigs() {
+  if (!intentTable || !currentAppId) return;
+  try {
+    const res = await fetchAppIntentDetails(currentAppId, state.walletId);
+    loadIntentDraft(res.intents || []);
+    setHint(intentHint, "");
+  } catch (err) {
+    intentDraft = [];
+    intentSnapshot = [];
+    renderIntentTable();
+    setHint(intentHint, `加载失败: ${err.message}`, "error");
+  }
+}
+
+async function loadWorkflowConfigs() {
+  if (!workflowTable || !currentAppId) return;
+  try {
+    const res = await fetchAppWorkflows(currentAppId, state.walletId);
+    loadWorkflowDraft(res.workflows || []);
+    setHint(workflowHint, "");
+  } catch (err) {
+    workflowDraft = [];
+    workflowSnapshot = [];
+    renderWorkflowTable();
+    setHint(workflowHint, `加载失败: ${err.message}`, "error");
+  }
+}
+
+async function saveIntentConfigs() {
+  if (!currentAppId) return;
+  try {
+    validateIntentDraft();
+    const payload = {
+      intents: intentDraft.map(normalizeIntentEntry).filter((item) => item.name),
+    };
+    if (!payload.intents.length) {
+      throw new Error("请至少保留一个 Intent");
+    }
+    setHint(intentHint, "正在保存 Intent...");
+    const res = await updateAppIntents(currentAppId, payload, state.walletId);
+    loadIntentDraft(res.intents || payload.intents);
+    setHint(intentHint, "Intent 已更新。");
+  } catch (err) {
+    setHint(intentHint, `保存失败: ${err.message}`, "error");
+  }
+}
+
+async function saveWorkflowConfigs() {
+  if (!currentAppId) return;
+  try {
+    validateWorkflowDraft();
+    const payload = {
+      workflows: workflowDraft.map(normalizeWorkflowEntry).filter((item) => item.name),
+    };
+    setHint(workflowHint, "正在保存工作流...");
+    const res = await updateAppWorkflows(currentAppId, payload, state.walletId);
+    loadWorkflowDraft(res.workflows || payload.workflows);
+    setHint(workflowHint, "工作流已更新。");
+  } catch (err) {
+    setHint(workflowHint, `保存失败: ${err.message}`, "error");
+  }
+}
+
+function resetIntentConfigs() {
+  intentDraft = cloneList(intentSnapshot);
+  renderIntentTable();
+  setHint(intentHint, "已恢复草稿。");
+}
+
+function resetWorkflowConfigs() {
+  workflowDraft = cloneList(workflowSnapshot);
+  renderWorkflowTable();
+  setHint(workflowHint, "已恢复草稿。");
+}
+
+function formatBytes(size) {
+  const value = Number(size) || 0;
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  if (value < 1024 * 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
+function formatPluginKind(kind) {
+  const mapping = {
+    config: "配置",
+    intents: "Intent",
+    workflows: "工作流",
+    pipeline: "Pipeline",
+    prompt: "Prompt",
+  };
+  return mapping[kind] || kind || "-";
+}
+
+function hasPluginChanges() {
+  if (!pluginEditor) return false;
+  return pluginEditor.value !== (state.pluginContentSnapshot || "");
+}
+
+function updatePluginEditorInfo(fileInfo) {
+  if (pluginFilePath) pluginFilePath.textContent = fileInfo?.path || "-";
+  if (pluginFileKind) pluginFileKind.textContent = formatPluginKind(fileInfo?.kind);
+  if (pluginFileSize) {
+    pluginFileSize.textContent = fileInfo?.exists ? formatBytes(fileInfo?.size_bytes) : "未创建";
+  }
+  if (pluginFileUpdated) {
+    pluginFileUpdated.textContent = fileInfo?.updated_at || "-";
+  }
+  if (pluginEditorTitle) pluginEditorTitle.textContent = fileInfo?.path ? "文件编辑器" : "文件编辑器";
+  if (pluginEditorSubtitle) {
+    pluginEditorSubtitle.textContent = fileInfo?.path
+      ? `${formatPluginKind(fileInfo?.kind)} · ${fileInfo.path}`
+      : "请选择文件开始编辑。";
+  }
+  if (pluginEditor) pluginEditor.disabled = !fileInfo;
+  if (pluginSave) pluginSave.disabled = !fileInfo;
+  if (pluginReset) pluginReset.disabled = !fileInfo;
+}
+
+function renderPluginFileTable() {
+  if (!pluginFileTable) return;
+  if (!currentAppId) {
+    pluginFileTable.innerHTML = "<div class=\"detail-label\">请先选择应用。</div>";
+    updatePluginEditorInfo(null);
+    return;
+  }
+  const rows = state.pluginFiles || [];
+  if (!rows.length) {
+    pluginFileTable.innerHTML = renderEmptyState("暂无插件文件", "当前应用未加载到插件文件。");
+    updatePluginEditorInfo(null);
+    return;
+  }
+  const header = `
+    <div class="table-row header">
+      <div>文件</div>
+      <div>类型</div>
+      <div>大小</div>
+      <div>更新时间</div>
+    </div>
+  `;
+  const body = rows
+    .map((file) => {
+      const active = state.selectedPluginPath === file.path ? "active" : "";
+      const muted = file.exists ? "" : "cell-muted";
+      const size = file.exists ? formatBytes(file.size_bytes) : "未创建";
+      return `
+        <div class="table-row ${active}" data-plugin-path="${file.path}">
+          <div class="${muted} text-mono">${escapeHtml(file.path)}</div>
+          <div>${escapeHtml(formatPluginKind(file.kind))}</div>
+          <div class="${muted}">${size}</div>
+          <div class="${muted}">${escapeHtml(file.updated_at || "-")}</div>
+        </div>
+      `;
+    })
+    .join("");
+  pluginFileTable.innerHTML = header + body;
+  pluginFileTable.querySelectorAll(".table-row[data-plugin-path]").forEach((row) => {
+    row.addEventListener("click", () => {
+      const path = row.dataset.pluginPath;
+      if (!path) return;
+      const fileInfo = (state.pluginFiles || []).find((item) => item.path === path) || null;
+      openPluginFile(fileInfo);
+    });
+  });
+}
+
+async function loadPluginFiles() {
+  if (!pluginFileTable || !currentAppId) return;
+  try {
+    const res = await fetchPluginFiles(currentAppId, state.walletId);
+    state.pluginFiles = res.files || [];
+    const selected = state.selectedPluginPath;
+    if (selected) {
+      const exists = state.pluginFiles.some((item) => item.path === selected);
+      if (!exists) {
+        state.selectedPluginPath = null;
+        state.pluginFileMeta = null;
+        state.pluginContentSnapshot = "";
+      }
+    }
+    renderPluginFileTable();
+    if (state.selectedPluginPath) {
+      const fileInfo = state.pluginFiles.find((item) => item.path === state.selectedPluginPath) || null;
+      updatePluginEditorInfo(fileInfo);
+    } else {
+      updatePluginEditorInfo(null);
+    }
+    setHint(pluginHint, "");
+  } catch (err) {
+    state.pluginFiles = [];
+    renderPluginFileTable();
+    setHint(pluginHint, `插件文件加载失败: ${err.message}`, "error");
+  }
+}
+
+async function openPluginFile(fileInfo) {
+  if (!pluginEditor || !fileInfo) return;
+  if (hasPluginChanges()) {
+    const proceed = window.confirm("当前文件尚未保存，确认切换？");
+    if (!proceed) return;
+  }
+  state.selectedPluginPath = fileInfo.path;
+  state.pluginFileMeta = fileInfo;
+  pluginEditor.value = "";
+  state.pluginContentSnapshot = "";
+  updatePluginEditorInfo(fileInfo);
+  if (!fileInfo.exists) {
+    setHint(pluginHint, "新文件尚未创建，编辑后点击保存即可。");
+    return;
+  }
+  try {
+    const res = await fetchPluginFile(currentAppId, fileInfo.path, state.walletId);
+    pluginEditor.value = res.content || "";
+    state.pluginContentSnapshot = res.content || "";
+    updatePluginEditorInfo({ ...fileInfo, kind: res.kind || fileInfo.kind, exists: true });
+    setHint(pluginHint, "");
+  } catch (err) {
+    setHint(pluginHint, `加载失败: ${err.message}`, "error");
+  }
+}
+
+async function savePluginFile() {
+  if (!currentAppId || !state.selectedPluginPath) {
+    setHint(pluginHint, "请先选择需要保存的文件。", "error");
+    return;
+  }
+  try {
+    setHint(pluginHint, "正在保存文件...");
+    const content = pluginEditor?.value || "";
+    await updatePluginFile(
+      currentAppId,
+      { path: state.selectedPluginPath, content },
+      state.walletId
+    );
+    state.pluginContentSnapshot = content;
+    setHint(pluginHint, "保存成功。");
+    await loadPluginFiles();
+  } catch (err) {
+    setHint(pluginHint, `保存失败: ${err.message}`, "error");
+  }
+}
+
+function resetPluginEditor() {
+  if (!pluginEditor) return;
+  pluginEditor.value = state.pluginContentSnapshot || "";
+  setHint(pluginHint, "已恢复到上次保存内容。");
+}
+
+function createNewPrompt() {
+  if (!currentAppId) return;
+  const name = window.prompt("请输入 Prompt 名称（仅字母/数字/下划线）");
+  if (!name) return;
+  const safe = name.trim();
+  if (!/^[a-zA-Z0-9_-]+$/.test(safe)) {
+    setHint(pluginHint, "Prompt 名称格式不正确。", "error");
+    return;
+  }
+  const path = `prompts/${safe}.md`;
+  const exists = (state.pluginFiles || []).some((item) => item.path === path);
+  const fileInfo = {
+    path,
+    kind: "prompt",
+    exists,
+    size_bytes: 0,
+    updated_at: null,
+  };
+  if (!exists) {
+    state.pluginFiles = [fileInfo, ...(state.pluginFiles || [])];
+    renderPluginFileTable();
+  }
+  openPluginFile(fileInfo);
+}
+
+function openPipelineFile() {
+  const fileInfo = (state.pluginFiles || []).find((item) => item.path === "pipeline.py") || {
+    path: "pipeline.py",
+    kind: "pipeline",
+    exists: false,
+    size_bytes: 0,
+    updated_at: null,
+  };
+  openPluginFile(fileInfo);
+}
+
+function resetKbConfigForm() {
+  if (!kbConfigForm) return;
+  kbConfigKey.value = "";
+  kbConfigKey.disabled = false;
+  kbConfigType.value = "public_kb";
+  kbConfigCollection.value = "";
+  kbConfigTextField.value = "text";
+  kbConfigTopk.value = "";
+  kbConfigWeight.value = "";
+  kbConfigAllowed.value = "false";
+  if (kbConfigDelete) {
+    kbConfigDelete.disabled = true;
+  }
+  if (kbConfigSubtitle) {
+    kbConfigSubtitle.textContent = "新建或调整当前应用的知识库配置。";
+  }
+  setHint(kbConfigHint, "");
+  kbSchemaDraft = [];
+  renderKbSchemaEditor();
+  updateSchemaStatus();
+}
+
+function setKbConfigForm(kb) {
+  if (!kbConfigForm) return;
+  if (!kb) {
+    resetKbConfigForm();
+    return;
+  }
+  kbConfigKey.value = kb.kb_key || "";
+  kbConfigKey.disabled = true;
+  kbConfigType.value = normalizeKbType(kb.type || "public_kb");
+  kbConfigCollection.value = kb.collection || "";
+  kbConfigTextField.value = kb.text_field || "text";
+  kbConfigTopk.value = kb.top_k !== undefined && kb.top_k !== null ? String(kb.top_k) : "";
+  kbConfigWeight.value = kb.weight !== undefined && kb.weight !== null ? String(kb.weight) : "";
+  kbConfigAllowed.value = kb.use_allowed_apps_filter ? "true" : "false";
+  if (kbConfigDelete) {
+    kbConfigDelete.disabled = false;
+  }
+  if (kbConfigSubtitle) {
+    kbConfigSubtitle.textContent = `编辑 ${kb.kb_key}`;
+  }
+  setHint(kbConfigHint, "");
+  loadKbSchemaDraft(kb);
+}
+
+function buildKbConfigPayload(isCreate) {
+  const kbKey = (kbConfigKey.value || "").trim();
+  const kbType = normalizeKbType((kbConfigType.value || "").trim());
+  const collection = (kbConfigCollection.value || "").trim();
+  const textField = (kbConfigTextField.value || "").trim() || "text";
+  const topKRaw = (kbConfigTopk.value || "").trim();
+  const weightRaw = (kbConfigWeight.value || "").trim();
+  const allowFilter = kbConfigAllowed.value === "true";
+
+  if (isCreate && !kbKey) {
+    throw new Error("请填写 KB Key");
+  }
+  if (!kbType) {
+    throw new Error("请选择 KB 类型");
+  }
+  if (!collection) {
+    throw new Error("请填写 collection");
+  }
+
+  const payload = {
+    kb_key: kbKey,
+    kb_type: kbType,
+    collection,
+    text_field: textField,
+    use_allowed_apps_filter: allowFilter,
+  };
+
+  if (isSuperAdmin()) {
+    validateSchemaDraft();
+    payload.schema = getSchemaPayload();
+    payload.vector_fields = getVectorFieldsFromSchema();
+  }
+
+  if (topKRaw) {
+    const topK = Number(topKRaw);
+    if (Number.isNaN(topK) || topK <= 0) {
+      throw new Error("Top K 必须为正整数");
+    }
+    payload.top_k = topK;
+  } else if (isCreate) {
+    payload.top_k = 3;
+  }
+  if (weightRaw) {
+    const weight = Number(weightRaw);
+    if (Number.isNaN(weight) || weight < 0) {
+      throw new Error("Weight 必须为非负数");
+    }
+    payload.weight = weight;
+  } else if (isCreate) {
+    payload.weight = 1.0;
+  }
+  return payload;
+}
+
+async function handleKbConfigSubmit(event) {
+  event.preventDefault();
+  if (!currentAppId) {
+    setHint(kbConfigHint, "未选择应用。", "error");
+    return;
+  }
+  const editing = kbConfigKey.disabled;
+  const kbKey = (kbConfigKey.value || "").trim();
+  const exists = state.knowledgeBases.some((kb) => kb.app_id === currentAppId && kb.kb_key === kbKey);
+
+  if (!editing && exists) {
+    setHint(kbConfigHint, "KB Key 已存在，请修改或选择该 KB 进行编辑。", "error");
+    return;
+  }
+
+  try {
+    const payload = buildKbConfigPayload(!editing);
+    if (editing) {
+      delete payload.kb_key;
+    }
+    setHint(kbConfigHint, editing ? "正在更新配置..." : "正在创建知识库...");
+    if (editing) {
+      await updateKBConfig(currentAppId, kbKey, payload, state.walletId);
+    } else {
+      await createKBConfig(currentAppId, payload, state.walletId);
+    }
+    await loadData();
+    if (editing) {
+      const selected = state.knowledgeBases.find((kb) => kb.app_id === currentAppId && kb.kb_key === kbKey);
+      setKbConfigForm(selected || null);
+      setHint(kbConfigHint, "配置已更新。");
+    } else {
+      const newId = `${currentAppId}:${kbKey}`;
+      await selectKb(newId);
+      setHint(kbConfigHint, "知识库已创建。");
+    }
+  } catch (err) {
+    setHint(kbConfigHint, `保存失败: ${err.message}`, "error");
+  }
+}
+
+async function handleKbConfigDelete() {
+  const kbKey = (kbConfigKey.value || "").trim();
+  if (!kbKey || !kbConfigKey.disabled) {
+    setHint(kbConfigHint, "请选择已有 KB 后再删除。", "error");
+    return;
+  }
+  const confirmed = window.confirm(`确认删除 KB ${kbKey}？此操作会移除配置但不删除已有向量。`);
+  if (!confirmed) return;
+  try {
+    setHint(kbConfigHint, "正在删除...");
+    await deleteKBConfig(currentAppId, kbKey, state.walletId);
+    await loadData();
+    if (!state.knowledgeBases.length) {
+      resetKbConfigForm();
+    }
+    setHint(kbConfigHint, "KB 已删除。");
+  } catch (err) {
+    setHint(kbConfigHint, `删除失败: ${err.message}`, "error");
+  }
+}
+
+function normalizeSessionIds(raw) {
+  return (raw || "")
+    .split(/[\s,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function updatePrivateDbDetail(db) {
+  if (!privateDbDetailTitle) return;
+  if (!db) {
+    privateDbDetailTitle.textContent = "私有库详情";
+    privateDbDetailSubtitle.textContent = "选择私有库查看会话。";
+    privateDbDetailId.textContent = "-";
+    privateDbDetailOwner.textContent = "-";
+    privateDbDetailStatus.textContent = "-";
+    privateDbDetailCreated.textContent = "-";
+    if (privateDbSessionsList) {
+      privateDbSessionsList.innerHTML = "<div class=\"detail-label\">暂无会话。</div>";
+    }
+    return;
+  }
+  privateDbDetailTitle.textContent = `私有库 ${db.private_db_id}`;
+  privateDbDetailSubtitle.textContent = `业务钱包 ${db.owner_wallet_id} · 状态 ${db.status || "-"}`;
+  privateDbDetailId.textContent = db.private_db_id || "-";
+  privateDbDetailOwner.textContent = db.owner_wallet_id || "-";
+  privateDbDetailStatus.textContent = db.status || "-";
+  privateDbDetailCreated.textContent = db.created_at || "-";
+}
+
+function renderPrivateDbSessions() {
+  if (!privateDbSessionsList) return;
+  const sessions = state.privateDbSessions || [];
+  if (!sessions.length) {
+    privateDbSessionsList.innerHTML = "<div class=\"detail-label\">暂无会话绑定。</div>";
+    return;
+  }
+  privateDbSessionsList.innerHTML = sessions
+    .map(
+      (session) => `
+      <div class="session-item">
+        <div>
+          <div class="session-id">${escapeHtml(session.session_id)}</div>
+          <div class="session-meta">${escapeHtml(session.created_at || "-")}</div>
+        </div>
+        <button class="ghost" data-unbind="${escapeHtml(session.session_id)}">解绑</button>
+      </div>
+    `
+    )
+    .join("");
+
+  privateDbSessionsList.querySelectorAll("button[data-unbind]").forEach((btn) => {
+    btn.addEventListener("click", async (event) => {
+      event.preventDefault();
+      const sessionId = btn.dataset.unbind;
+      if (!sessionId || !state.selectedPrivateDbId) return;
+      const confirmed = window.confirm(`确认解绑会话 ${sessionId}？`);
+      if (!confirmed) return;
+      try {
+        await unbindPrivateDBSession(
+          state.selectedPrivateDbId,
+          sessionId,
+          currentAppId,
+          state.walletId
+        );
+        await loadPrivateDbSessions();
+      } catch (err) {
+        setHint(privateDbHint, `解绑失败: ${err.message}`, "error");
+      }
+    });
+  });
+}
+
+function renderPrivateDbTable() {
+  if (!privateDbTable) return;
+  const rows = state.privateDbs || [];
+  if (!rows.length) {
+    privateDbTable.innerHTML = "<div class=\"detail-label\">暂无私有库。</div>";
+    return;
+  }
+  const header = `
+    <div class="table-row header">
+      <div>私有库</div>
+      <div>状态</div>
+      <div>操作</div>
+    </div>
+  `;
+  const body = rows
+    .map((db) => {
+      const active = state.selectedPrivateDbId === db.private_db_id ? "active" : "";
+      const fullId = escapeHtml(db.private_db_id || "-");
+      const shortId = escapeHtml(compactId(db.private_db_id || "-"));
+      const ownerFull = escapeHtml(db.owner_wallet_id || "-");
+      const ownerShort = escapeHtml(compactId(db.owner_wallet_id || "-"));
+      const createdAt = escapeHtml(db.created_at || "-");
+      const statusLabel = escapeHtml(db.status || "-");
+      const statusClass = resolveStatusClass(db.status || "");
+      return `
+        <div class="table-row ${active}" data-private-db="${escapeHtml(db.private_db_id)}">
+          <div class="private-db-main">
+            <div class="private-db-id" title="${fullId}">${shortId}</div>
+            <div class="cell-muted" title="${ownerFull}">业务钱包 ${ownerShort}</div>
+            <div class="cell-muted">创建 ${createdAt}</div>
+          </div>
+          <div class="private-db-meta">
+            <span class="status-pill ${statusClass}">${statusLabel}</span>
+          </div>
+          <div class="private-db-actions">
+            <button class="ghost" data-select="${escapeHtml(db.private_db_id)}">查看</button>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+  privateDbTable.innerHTML = header + body;
+  privateDbTable.querySelectorAll("[data-private-db]").forEach((row) => {
+    row.addEventListener("click", () => selectPrivateDb(row.dataset.privateDb));
+  });
+  privateDbTable.querySelectorAll("button[data-select]").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      selectPrivateDb(btn.dataset.select);
+    });
+  });
+}
+
+async function loadPrivateDbs() {
+  if (!privateDbTable) return;
+  if (!currentAppId) {
+    privateDbTable.innerHTML = "<div class=\"detail-label\">请先选择应用。</div>";
+    return;
+  }
+  const ownerFilter = (privateDbOwnerFilter?.value || "").trim();
+  try {
+    const res = await fetchPrivateDBs({
+      walletId: state.walletId,
+      appId: currentAppId,
+      ownerWalletId: ownerFilter || undefined,
+    });
+    state.privateDbs = res.items || [];
+    renderPrivateDbTable();
+    if (!state.privateDbs.length) {
+      state.selectedPrivateDbId = null;
+      updatePrivateDbDetail(null);
+      renderPrivateDbSessions();
+      return;
+    }
+    if (!state.selectedPrivateDbId && state.privateDbs.length) {
+      selectPrivateDb(state.privateDbs[0].private_db_id);
+    } else if (state.selectedPrivateDbId) {
+      const exists = state.privateDbs.some((db) => db.private_db_id === state.selectedPrivateDbId);
+      if (!exists) {
+        state.selectedPrivateDbId = null;
+        updatePrivateDbDetail(null);
+        renderPrivateDbSessions();
+      }
+    }
+  } catch (err) {
+    privateDbTable.innerHTML = `<div class="detail-label">加载失败: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function loadPrivateDbSessions() {
+  if (!state.selectedPrivateDbId || !currentAppId) {
+    state.privateDbSessions = [];
+    renderPrivateDbSessions();
+    return;
+  }
+  try {
+    const res = await fetchPrivateDBSessions(state.selectedPrivateDbId, currentAppId, state.walletId);
+    state.privateDbSessions = res.sessions || [];
+    renderPrivateDbSessions();
+  } catch (err) {
+    setHint(privateDbHint, `加载会话失败: ${err.message}`, "error");
+  }
+}
+
+function selectPrivateDb(privateDbId) {
+  if (!privateDbId) return;
+  const db = state.privateDbs.find((item) => item.private_db_id === privateDbId);
+  if (!db) return;
+  state.selectedPrivateDbId = privateDbId;
+  if (privateDbOwner) {
+    privateDbOwner.value = db.owner_wallet_id || "";
+  }
+  if (privateDbIdInput) {
+    privateDbIdInput.value = db.private_db_id || "";
+  }
+  if (privateDbSessionsInput) {
+    privateDbSessionsInput.value = "";
+  }
+  updatePrivateDbDetail(db);
+  renderPrivateDbTable();
+  loadPrivateDbSessions();
+}
+
+async function handlePrivateDbCreate() {
+  if (!currentAppId) {
+    setHint(privateDbHint, "未选择应用。", "error");
+    return;
+  }
+  const dataWallet = (privateDbOwner?.value || "").trim();
+  if (!dataWallet) {
+    setHint(privateDbHint, "请填写业务用户 wallet_id。", "error");
+    return;
+  }
+  const privateDbId = (privateDbIdInput?.value || "").trim();
+  try {
+    setHint(privateDbHint, "正在创建私有库...");
+    const res = await createPrivateDB(
+      {
+        app_id: currentAppId,
+        data_wallet_id: dataWallet,
+        private_db_id: privateDbId || undefined,
+      },
+      state.walletId
+    );
+    setHint(privateDbHint, `已创建/获取私有库 ${res.private_db_id}`);
+    await loadPrivateDbs();
+    selectPrivateDb(res.private_db_id);
+  } catch (err) {
+    setHint(privateDbHint, `创建失败: ${err.message}`, "error");
+  }
+}
+
+async function handlePrivateDbBind() {
+  if (!currentAppId) {
+    setHint(privateDbHint, "未选择应用。", "error");
+    return;
+  }
+  const privateDbId = state.selectedPrivateDbId || (privateDbIdInput?.value || "").trim();
+  if (!privateDbId) {
+    setHint(privateDbHint, "请先选择或填写 private_db_id。", "error");
+    return;
+  }
+  const dataWallet = (privateDbOwner?.value || "").trim();
+  const sessionIds = normalizeSessionIds(privateDbSessionsInput?.value || "");
+  if (!sessionIds.length) {
+    setHint(privateDbHint, "请填写至少一个 session_id。", "error");
+    return;
+  }
+  try {
+    setHint(privateDbHint, "正在绑定会话...");
+    await bindPrivateDBSessions(
+      privateDbId,
+      {
+        app_id: currentAppId,
+        data_wallet_id: dataWallet || undefined,
+        session_ids: sessionIds,
+      },
+      state.walletId
+    );
+    setHint(privateDbHint, `已绑定 ${sessionIds.length} 条会话。`);
+    if (privateDbSessionsInput) {
+      privateDbSessionsInput.value = "";
+    }
+    await loadPrivateDbSessions();
+  } catch (err) {
+    setHint(privateDbHint, `绑定失败: ${err.message}`, "error");
+  }
+}
+
+function formatAuditAction(action) {
+  const mapping = {
+    "kb_config.create": "KB 新建",
+    "kb_config.update": "KB 更新",
+    "kb_config.delete": "KB 删除",
+    "private_db.create": "私有库创建",
+    "private_db.bind_session": "私有库绑定",
+    "private_db.unbind_session": "私有库解绑",
+    "intent.update": "Intent 更新",
+    "workflow.update": "工作流更新",
+    "plugin.update": "插件文件更新",
+  };
+  return mapping[action] || action || "-";
+}
+
+function formatAuditTarget(log) {
+  const type = log.entity_type || "-";
+  const id = log.entity_id || "-";
+  if (type === "kb_config") return `KB ${id}`;
+  if (type === "private_db") return `私有库 ${id}`;
+  if (type === "intent") return `Intent ${id}`;
+  if (type === "workflow") return `工作流 ${id}`;
+  if (type === "plugin_file") return `插件文件 ${id}`;
+  return `${type} ${id}`;
+}
+
+function diffConfigKeys(before, after) {
+  const left = before && typeof before === "object" ? before : {};
+  const right = after && typeof after === "object" ? after : {};
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  const changed = [];
+  keys.forEach((key) => {
+    const l = JSON.stringify(left[key]);
+    const r = JSON.stringify(right[key]);
+    if (l !== r) changed.push(key);
+  });
+  return changed;
+}
+
+function summarizeAudit(log) {
+  const meta = log.meta || {};
+  if (log.action === "kb_config.create") return "新建 KB 配置";
+  if (log.action === "kb_config.delete") return "删除 KB 配置";
+  if (log.action === "kb_config.update") {
+    const changed = diffConfigKeys(meta.before || {}, meta.after || {});
+    return changed.length ? `变更字段: ${changed.join(", ")}` : "更新 KB 配置";
+  }
+  if (log.action === "private_db.create") {
+    return meta.data_wallet_id ? `业务钱包 ${meta.data_wallet_id}` : "创建私有库";
+  }
+  if (log.action === "private_db.bind_session") {
+    const count = Array.isArray(meta.session_ids) ? meta.session_ids.length : 0;
+    return count ? `绑定会话 ${count} 条` : "绑定会话";
+  }
+  if (log.action === "private_db.unbind_session") {
+    return meta.session_id ? `解绑会话 ${meta.session_id}` : "解绑会话";
+  }
+  if (log.action === "intent.update") {
+    const before = meta.before || {};
+    const after = meta.after || {};
+    const count = Object.keys(after || {}).length;
+    const changed = diffConfigKeys(before, after);
+    return changed.length ? `变更 Intent ${changed.join(", ")}` : `Intent ${count} 个`;
+  }
+  if (log.action === "workflow.update") {
+    const before = Array.isArray(meta.before) ? meta.before.length : 0;
+    const after = Array.isArray(meta.after) ? meta.after.length : 0;
+    return `流程 ${before} → ${after}`;
+  }
+  if (log.action === "plugin.update") {
+    if (meta.path) return meta.path;
+    if (meta.size_before !== undefined || meta.size_after !== undefined) {
+      return `大小 ${meta.size_before ?? "-"} → ${meta.size_after ?? "-"}`;
+    }
+    return "插件文件更新";
+  }
+  return "";
+}
+
+function updateAuditDetail(log) {
+  if (!auditDetail) return;
+  if (!log) {
+    auditDetail.textContent = "选择日志查看详情。";
+    return;
+  }
+  auditDetail.textContent = JSON.stringify(log.meta || {}, null, 2);
+}
+
+function renderAuditTable() {
+  if (!auditTable) return;
+  const rows = state.auditLogs || [];
+  if (!rows.length) {
+    auditTable.innerHTML = renderEmptyState("暂无审计日志", "当前应用暂无配置变更记录。");
+    updateAuditDetail(null);
+    return;
+  }
+
+  const header = `
+    <div class="table-row header">
+      <div>时间</div>
+      <div>操作</div>
+      <div>目标</div>
+      <div>操作人</div>
+      <div>备注</div>
+    </div>
+  `;
+
+  const body = rows
+    .map((log) => {
+      const active = state.selectedAuditId === log.id ? "active" : "";
+      const summary = summarizeAudit(log);
+      return `
+        <div class="table-row ${active}" data-audit-id="${log.id}">
+          <div class="cell-muted">${log.created_at || "-"}</div>
+          <div>${escapeHtml(formatAuditAction(log.action))}</div>
+          <div>${escapeHtml(formatAuditTarget(log))}</div>
+          <div class="cell-muted">${escapeHtml(log.operator_wallet_id || "-")}</div>
+          <div>${escapeHtml(summary || "-")}</div>
+        </div>
+      `;
+    })
+    .join("");
+
+  auditTable.innerHTML = header + body;
+  auditTable.querySelectorAll(".table-row[data-audit-id]").forEach((row) => {
+    row.addEventListener("click", () => selectAuditLog(Number(row.dataset.auditId)));
+  });
+}
+
+function selectAuditLog(id) {
+  if (!id) return;
+  state.selectedAuditId = id;
+  const log = (state.auditLogs || []).find((item) => item.id === id);
+  renderAuditTable();
+  updateAuditDetail(log || null);
+}
+
+async function loadAuditLogs() {
+  if (!auditTable) return;
+  if (!currentAppId) {
+    auditTable.innerHTML = "<div class=\"detail-label\">请先选择应用。</div>";
+    updateAuditDetail(null);
+    return;
+  }
+  try {
+    const res = await fetchAuditLogs({
+      walletId: state.walletId,
+      appId: currentAppId,
+      entityType: auditEntityType?.value || undefined,
+      entityId: (auditEntityId?.value || "").trim() || undefined,
+      action: auditAction?.value || undefined,
+      operatorWalletId: (auditOperator?.value || "").trim() || undefined,
+      limit: 50,
+      offset: 0,
+    });
+    state.auditLogs = res.items || [];
+    if (state.selectedAuditId) {
+      const exists = state.auditLogs.some((log) => log.id === state.selectedAuditId);
+      if (!exists) state.selectedAuditId = null;
+    }
+    if (!state.selectedAuditId && state.auditLogs.length) {
+      state.selectedAuditId = state.auditLogs[0].id;
+    }
+    renderAuditTable();
+    updateAuditDetail((state.auditLogs || []).find((log) => log.id === state.selectedAuditId) || null);
+    setHint(auditHint, "");
+  } catch (err) {
+    state.auditLogs = [];
+    state.selectedAuditId = null;
+    renderAuditTable();
+    updateAuditDetail(null);
+    setHint(auditHint, `加载失败: ${err.message}`, "error");
+  }
+}
+
+function exportAuditLogs() {
+  const rows = state.auditLogs || [];
+  if (!rows.length) {
+    setHint(auditHint, "没有可导出的审计日志。");
+    return;
+  }
+  setHint(auditHint, "");
+  const blob = new Blob([JSON.stringify(rows, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `audit-${Date.now()}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function openNewDocDrawer() {
   resetDocForm();
   updateDocDrawerMeta(null);
@@ -1304,18 +2866,26 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-function getDocFilters() {
-  return {
-    sessionId: (docSessionFilter?.value || "").trim(),
-    privateDbId: (docPrivateDbFilter?.value || "").trim(),
-  };
+function compactId(value, head = 8, tail = 4) {
+  const text = String(value || "");
+  if (!text) return "-";
+  if (text.length <= head + tail + 3) return text;
+  return `${text.slice(0, head)}...${text.slice(-tail)}`;
 }
 
-function getPrivateDbFilters() {
+function resolveStatusClass(status) {
+  const value = String(status || "").toLowerCase();
+  if (value.includes("ok") || value.includes("active") || value.includes("ready")) return "status-ok";
+  if (value.includes("pending") || value.includes("init")) return "status-pending";
+  if (value.includes("fail") || value.includes("error")) return "status-failed";
+  return "status-configured";
+}
+
+function getDocFilters() {
   return {
-    ownerWalletId: (privateOwnerFilter?.value || "").trim(),
-    sessionId: (privateSessionFilter?.value || "").trim(),
-    privateDbId: (privateDbFilter?.value || "").trim(),
+    dataWalletId: (docDataWalletFilter?.value || "").trim(),
+    privateDbId: (docPrivateDbFilter?.value || "").trim(),
+    sessionId: (docSessionFilter?.value || "").trim(),
   };
 }
 
@@ -1341,10 +2911,15 @@ async function toggleSchema() {
   let docs = state.documents;
   if (!docs.length) {
     try {
-      const { sessionId, privateDbId } = getDocFilters();
+      const { dataWalletId, privateDbId, sessionId } = getDocFilters();
+      if (sessionId && !dataWalletId) {
+        schemaPanel.textContent = "使用 session_id 过滤时需先填写业务用户 wallet_id。";
+        return;
+      }
       const res = await fetchKBDocuments(kb.app_id, kb.kb_key, 25, 0, state.walletId, {
-        sessionId,
+        dataWalletId,
         privateDbId,
+        sessionId,
       });
       docs = res.items || [];
     } catch (err) {
@@ -1530,10 +3105,14 @@ function renderMemorySessionTable() {
   const body = rows
     .map((row) => {
       const active = state.selectedMemoryKey === row.memory_key ? "active" : "";
+      const walletFull = escapeHtml(row.wallet_id || "-");
+      const walletShort = escapeHtml(compactId(row.wallet_id || "-"));
+      const sessionFull = escapeHtml(row.session_id || "-");
+      const sessionShort = escapeHtml(compactId(row.session_id || "-"));
       return `
         <div class="table-row memory-session-row ${active}" data-memory-key="${row.memory_key}">
-          <div>${escapeHtml(row.wallet_id || "-")}</div>
-          <div>${escapeHtml(row.session_id || "-")}</div>
+          <div title="${walletFull}">${walletShort}</div>
+          <div title="${sessionFull}">${sessionShort}</div>
           <div>${row.message_count ?? 0}</div>
           <div>${row.last_message_at || row.updated_at || "-"}</div>
         </div>
@@ -1765,195 +3344,6 @@ async function loadMemoryContexts() {
   resetMemoryContextForm(getSelectedMemoryContext());
 }
 
-function renderPrivateDbTable() {
-  if (!privateDbTable) return;
-  const filters = getPrivateDbFilters();
-  let rows = privateDbCache || [];
-  if (filters.privateDbId) {
-    rows = rows.filter((row) => String(row.private_db_id || "").includes(filters.privateDbId));
-  }
-  if (!rows.length) {
-    privateDbTable.innerHTML = renderEmptyState("暂无私有库", "请检查应用与筛选条件。");
-    return;
-  }
-
-  const header = `
-    <div class="table-row header">
-      <div>私有库</div>
-      <div>Owner</div>
-      <div>状态</div>
-      <div>创建时间</div>
-      <div>操作</div>
-    </div>
-  `;
-
-  const body = rows
-    .map((row) => {
-      const active = expandedPrivateDbId === row.private_db_id ? "active" : "";
-      const owner = escapeHtml(row.owner_wallet_id || "-");
-      const status = escapeHtml(row.status || "-");
-      const createdAt = row.created_at || "-";
-      const badge = `<div class="badge">${escapeHtml(row.app_id || "-")}</div>`;
-      return `
-        <div class="table-row ${active}" data-private-db="${row.private_db_id}">
-          <div>
-            <strong>${escapeHtml(row.private_db_id || "-")}</strong>
-            ${badge}
-          </div>
-          <div>${owner}</div>
-          <div>${status}</div>
-          <div>${createdAt}</div>
-          <div class="panel-tools">
-            <button class="ghost" data-private-sessions="${row.private_db_id}">会话</button>
-          </div>
-        </div>
-      `;
-    })
-    .join("");
-
-  const expandedRow = rows.find((row) => row.private_db_id === expandedPrivateDbId);
-  let expandedBlock = "";
-  if (expandedRow) {
-    const sessionState = privateDbSessionsCache.get(expandedRow.private_db_id);
-    if (!sessionState) {
-      expandedBlock = `
-        <div class="table-row expanded">
-          <div class="detail-label">会话加载中...</div>
-        </div>
-      `;
-    } else if (sessionState.error) {
-      expandedBlock = `
-        <div class="table-row expanded">
-          <div class="detail-label text-danger">加载失败：${escapeHtml(sessionState.error)}</div>
-        </div>
-      `;
-    } else if (!sessionState.sessions.length) {
-      expandedBlock = `
-        <div class="table-row expanded">
-          <div class="detail-label">暂无绑定会话。</div>
-        </div>
-      `;
-    } else {
-      const sessionRows = sessionState.sessions
-        .map(
-          (item) => `
-            <div class="session-item">
-              <div>
-                <div class="session-id">${escapeHtml(item.session_id)}</div>
-                <div class="session-meta">${escapeHtml(item.created_at || "-")}</div>
-              </div>
-              <button class="ghost" data-private-unbind="${expandedRow.private_db_id}" data-session-id="${escapeHtml(
-            item.session_id
-          )}">解绑</button>
-            </div>
-          `
-        )
-        .join("");
-      expandedBlock = `
-        <div class="table-row expanded">
-          <div class="session-list">${sessionRows}</div>
-        </div>
-      `;
-    }
-  }
-
-  privateDbTable.innerHTML = header + body + expandedBlock;
-
-  privateDbTable.querySelectorAll("button[data-private-sessions]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      togglePrivateDbSessions(button.dataset.privateSessions);
-    });
-  });
-
-  privateDbTable.querySelectorAll("button[data-private-unbind]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      const privateDbId = button.dataset.privateUnbind;
-      const sessionId = button.dataset.sessionId;
-      if (privateDbId && sessionId) {
-        handlePrivateDbUnbind(privateDbId, sessionId);
-      }
-    });
-  });
-}
-
-async function togglePrivateDbSessions(privateDbId) {
-  if (!privateDbId) return;
-  if (expandedPrivateDbId === privateDbId) {
-    expandedPrivateDbId = null;
-    renderPrivateDbTable();
-    return;
-  }
-  expandedPrivateDbId = privateDbId;
-  if (!privateDbSessionsCache.has(privateDbId)) {
-    privateDbSessionsCache.set(privateDbId, { sessions: [], error: null });
-  }
-  renderPrivateDbTable();
-  try {
-    const res = await fetchPrivateDBSessions(privateDbId, currentAppId, state.walletId);
-    privateDbSessionsCache.set(privateDbId, { sessions: res.sessions || [], error: null });
-  } catch (err) {
-    privateDbSessionsCache.set(privateDbId, { sessions: [], error: err.message });
-  }
-  renderPrivateDbTable();
-}
-
-async function handlePrivateDbUnbind(privateDbId, sessionId) {
-  if (!privateDbId || !sessionId) return;
-  const ok = window.confirm(`确认解绑 session_id=${sessionId} 吗？`);
-  if (!ok) return;
-  try {
-    await unbindPrivateDBSession(privateDbId, sessionId, currentAppId, state.walletId);
-    const res = await fetchPrivateDBSessions(privateDbId, currentAppId, state.walletId);
-    privateDbSessionsCache.set(privateDbId, { sessions: res.sessions || [], error: null });
-    renderPrivateDbTable();
-  } catch (err) {
-    if (privateDbHint) {
-      privateDbHint.textContent = `解绑失败: ${err.message}`;
-    }
-  }
-}
-
-async function loadPrivateDbs() {
-  if (!privateDbTable) return;
-  if (!currentAppId) {
-    privateDbCache = [];
-    renderPrivateDbTable();
-    return;
-  }
-  const filters = getPrivateDbFilters();
-  const ownerWalletId = isSuperAdmin() ? filters.ownerWalletId : "";
-  const sessionId = filters.sessionId;
-  if (!isSuperAdmin() && privateOwnerFilter) {
-    privateOwnerFilter.value = "";
-    privateOwnerFilter.disabled = true;
-  } else if (privateOwnerFilter) {
-    privateOwnerFilter.disabled = false;
-  }
-  try {
-    const res = await fetchPrivateDBs({
-      walletId: state.walletId,
-      appId: currentAppId,
-      ownerWalletId: ownerWalletId || undefined,
-      sessionId: sessionId || undefined,
-    });
-    privateDbCache = res.items || [];
-    if (expandedPrivateDbId && !privateDbCache.some((row) => row.private_db_id === expandedPrivateDbId)) {
-      expandedPrivateDbId = null;
-    }
-    if (privateDbHint) {
-      privateDbHint.textContent = "";
-    }
-  } catch (err) {
-    privateDbCache = [];
-    if (privateDbHint) {
-      privateDbHint.textContent = `加载失败: ${err.message}`;
-    }
-  }
-  renderPrivateDbTable();
-}
-
 async function handleMemoryContextSubmit(event) {
   event.preventDefault();
   const ctx = getSelectedMemoryContext();
@@ -2057,6 +3447,47 @@ function setKbTab(tab) {
   });
 }
 
+function setSidebarCollapsed(collapsed) {
+  if (!layoutRoot) return;
+  layoutRoot.classList.toggle("sidebar-collapsed", collapsed);
+  if (sidebarToggle) {
+    sidebarToggle.textContent = collapsed ? "展开侧栏" : "收起侧栏";
+    sidebarToggle.setAttribute("aria-pressed", collapsed ? "true" : "false");
+  }
+  try {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
+  } catch {
+  }
+}
+
+function loadSidebarState() {
+  const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+  setSidebarCollapsed(stored === "1");
+}
+
+function setActiveNav(section) {
+  if (!section || !navItems.length) return;
+  navItems.forEach((item) => {
+    item.classList.toggle("active", item.dataset.nav === section);
+  });
+}
+
+function setupNavObserver() {
+  const sections = Array.from(document.querySelectorAll("[data-section]"));
+  if (!sections.length || typeof IntersectionObserver === "undefined") return;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveNav(entry.target.dataset.section);
+        }
+      });
+    },
+    { rootMargin: "-35% 0px -55% 0px", threshold: 0.1 }
+  );
+  sections.forEach((section) => observer.observe(section));
+}
+
 apiBaseInput.addEventListener("change", (event) => {
   setApiBase(event.target.value.trim());
   loadData();
@@ -2112,6 +3543,36 @@ kbFilterToggle.addEventListener("click", () => {
 });
 schemaToggle.addEventListener("click", () => toggleSchema());
 kbSearch.addEventListener("input", () => renderKbTable());
+if (kbConfigForm) {
+  kbConfigForm.addEventListener("submit", handleKbConfigSubmit);
+}
+if (kbConfigNew) {
+  kbConfigNew.addEventListener("click", () => resetKbConfigForm());
+}
+if (kbConfigDelete) {
+  kbConfigDelete.addEventListener("click", () => handleKbConfigDelete());
+}
+if (kbConfigType && kbConfigAllowed) {
+  kbConfigType.addEventListener("change", () => {
+    if (isUserUploadType(kbConfigType.value)) {
+      if (kbConfigAllowed.value === "false") {
+        kbConfigAllowed.value = "true";
+      }
+    } else {
+      kbConfigAllowed.value = "false";
+    }
+    updateSchemaStatus();
+  });
+}
+if (kbConfigTextField) {
+  kbConfigTextField.addEventListener("input", () => updateSchemaStatus());
+}
+if (kbSchemaAdd) {
+  kbSchemaAdd.addEventListener("click", () => {
+    kbSchemaDraft.push({ name: "", data_type: "text", vectorize: false, description: "" });
+    renderKbSchemaEditor();
+  });
+}
 docSearch.addEventListener("input", () => {
   renderDocTable();
   if (docExportHint) {
@@ -2119,12 +3580,12 @@ docSearch.addEventListener("input", () => {
   }
 });
 docRefresh.addEventListener("click", () => loadDocuments());
-if (docSessionFilter) {
-  docSessionFilter.addEventListener("change", () => {
+if (docDataWalletFilter) {
+  docDataWalletFilter.addEventListener("change", () => {
     state.docPageOffset = 0;
     loadDocuments();
   });
-  docSessionFilter.addEventListener("keydown", (event) => {
+  docDataWalletFilter.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
       state.docPageOffset = 0;
@@ -2138,6 +3599,19 @@ if (docPrivateDbFilter) {
     loadDocuments();
   });
   docPrivateDbFilter.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      state.docPageOffset = 0;
+      loadDocuments();
+    }
+  });
+}
+if (docSessionFilter) {
+  docSessionFilter.addEventListener("change", () => {
+    state.docPageOffset = 0;
+    loadDocuments();
+  });
+  docSessionFilter.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
       state.docPageOffset = 0;
@@ -2189,18 +3663,6 @@ if (memoryWalletFilter) {
 if (memorySessionFilter) {
   memorySessionFilter.addEventListener("input", () => loadMemorySessions());
 }
-if (privateDbRefresh) {
-  privateDbRefresh.addEventListener("click", () => loadPrivateDbs());
-}
-if (privateOwnerFilter) {
-  privateOwnerFilter.addEventListener("change", () => loadPrivateDbs());
-}
-if (privateSessionFilter) {
-  privateSessionFilter.addEventListener("change", () => loadPrivateDbs());
-}
-if (privateDbFilter) {
-  privateDbFilter.addEventListener("input", () => renderPrivateDbTable());
-}
 if (memoryContextRefresh) {
   memoryContextRefresh.addEventListener("click", () => loadMemoryContexts());
 }
@@ -2209,6 +3671,102 @@ if (memoryContextForm) {
 }
 if (memoryContextReset) {
   memoryContextReset.addEventListener("click", () => resetMemoryContextChanges());
+}
+if (privateDbRefresh) {
+  privateDbRefresh.addEventListener("click", () => loadPrivateDbs());
+}
+if (privateDbOwnerFilter) {
+  privateDbOwnerFilter.addEventListener("input", () => loadPrivateDbs());
+}
+if (privateDbSessionsRefresh) {
+  privateDbSessionsRefresh.addEventListener("click", () => loadPrivateDbSessions());
+}
+if (privateDbCreate) {
+  privateDbCreate.addEventListener("click", () => handlePrivateDbCreate());
+}
+if (privateDbBind) {
+  privateDbBind.addEventListener("click", () => handlePrivateDbBind());
+}
+if (intentRefresh) {
+  intentRefresh.addEventListener("click", () => loadIntentConfigs());
+}
+if (intentAdd) {
+  intentAdd.addEventListener("click", () => {
+    intentDraft.push({ name: "", description: "", params: [], exposed: true });
+    renderIntentTable();
+  });
+}
+if (intentSave) {
+  intentSave.addEventListener("click", () => saveIntentConfigs());
+}
+if (intentReset) {
+  intentReset.addEventListener("click", () => resetIntentConfigs());
+}
+if (workflowRefresh) {
+  workflowRefresh.addEventListener("click", () => loadWorkflowConfigs());
+}
+if (workflowAdd) {
+  workflowAdd.addEventListener("click", () => {
+    workflowDraft.push({ name: "", description: "", intents: [], enabled: true });
+    renderWorkflowTable();
+  });
+}
+if (workflowSave) {
+  workflowSave.addEventListener("click", () => saveWorkflowConfigs());
+}
+if (workflowReset) {
+  workflowReset.addEventListener("click", () => resetWorkflowConfigs());
+}
+
+if (pluginRefresh) {
+  pluginRefresh.addEventListener("click", () => loadPluginFiles());
+}
+if (pluginSave) {
+  pluginSave.addEventListener("click", () => savePluginFile());
+}
+if (pluginReset) {
+  pluginReset.addEventListener("click", () => resetPluginEditor());
+}
+if (pluginNewPrompt) {
+  pluginNewPrompt.addEventListener("click", () => createNewPrompt());
+}
+if (pluginOpenPipeline) {
+  pluginOpenPipeline.addEventListener("click", () => openPipelineFile());
+}
+if (pluginEditor) {
+  pluginEditor.addEventListener("input", () => {
+    if (!state.selectedPluginPath) return;
+    const changed = hasPluginChanges();
+    setHint(pluginHint, changed ? "已修改，记得保存。" : "");
+  });
+}
+if (auditRefresh) {
+  auditRefresh.addEventListener("click", () => loadAuditLogs());
+}
+if (auditExport) {
+  auditExport.addEventListener("click", () => exportAuditLogs());
+}
+if (auditEntityType) {
+  auditEntityType.addEventListener("change", () => loadAuditLogs());
+}
+if (auditAction) {
+  auditAction.addEventListener("change", () => loadAuditLogs());
+}
+if (auditEntityId) {
+  auditEntityId.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      loadAuditLogs();
+    }
+  });
+}
+if (auditOperator) {
+  auditOperator.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      loadAuditLogs();
+    }
+  });
 }
 ingestionExport.addEventListener("click", () => exportIngestionLogs());
 if (docDrawerBackdrop) {
@@ -2222,6 +3780,66 @@ document.addEventListener("keydown", (event) => {
     closeDocDrawer();
   }
 });
+
+if (navItems.length) {
+  navItems.forEach((item) => {
+    item.addEventListener("click", () => {
+      const target = item.dataset.nav;
+      if (!target) return;
+      scrollToSection(target);
+      setActiveNav(target);
+    });
+  });
+  setupNavObserver();
+}
+
+if (navActions.length) {
+  navActions.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const action = btn.dataset.action;
+      if (!action) return;
+      if (action === "kb-new") {
+        setKbTab("structure");
+        scrollToSection("knowledge");
+        resetKbConfigForm();
+        kbConfigKey?.focus();
+        return;
+      }
+      if (action === "kb-schema") {
+        setKbTab("structure");
+        scrollToSection("knowledge");
+        kbSchemaAdd?.focus();
+        return;
+      }
+      if (action === "doc-new") {
+        setKbTab("data");
+        scrollToSection("knowledge");
+        openNewDocDrawer();
+        return;
+      }
+      if (action === "audit") {
+        scrollToSection("audit");
+        return;
+      }
+      if (action === "orchestration") {
+        scrollToSection("orchestration");
+        return;
+      }
+      if (action === "plugin") {
+        scrollToSection("plugin");
+        return;
+      }
+    });
+  });
+}
+
+if (sidebarToggle) {
+  sidebarToggle.addEventListener("click", () => {
+    const next = !layoutRoot?.classList.contains("sidebar-collapsed");
+    setSidebarCollapsed(next);
+  });
+  loadSidebarState();
+}
 
 apiBaseInput.value = loadApiBase();
 loadWalletId();

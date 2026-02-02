@@ -27,19 +27,27 @@ from datasource.vectorstores.weaviate_store import WeaviateStore
 from identity.identity_manager import IdentityManager
 from identity.models import Identity
 
+from auth_client import login_with_private_key, resolve_test_private_key
+
+DEFAULT_HEADERS: Dict[str, str] = {}
+
 
 def http_json(
     method: str,
     url: str,
     payload: Dict[str, Any] | None = None,
     *,
+    headers: Dict[str, str] | None = None,
     timeout: int = 10,
 ) -> Tuple[int, Any]:
     data = None
-    headers = {"Content-Type": "application/json"}
+    merged = {"Content-Type": "application/json"}
+    merged.update(DEFAULT_HEADERS)
+    if headers:
+        merged.update(headers)
     if payload is not None:
         data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    req = urllib.request.Request(url, data=data, headers=merged, method=method)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             raw = resp.read().decode("utf-8")
@@ -507,6 +515,7 @@ def main() -> int:
     parser.add_argument("--api-base", default="http://127.0.0.1:8000", help="API base URL")
     parser.add_argument("--app-id", default="interviewer", help="App ID")
     parser.add_argument("--wallet-id", default="wallet_demo", help="Wallet ID")
+    parser.add_argument("--private-key", default="", help="Optional EVM private key for SIWE login (or env RAG_TEST_PRIVATE_KEY)")
     parser.add_argument("--session-id", default="session_validation_001", help="Session ID")
     parser.add_argument("--kb-key", default="user_profile_kb", help="KB key for user upload")
     parser.add_argument("--timeout", type=int, default=30, help="HTTP timeout seconds")
@@ -523,6 +532,15 @@ def main() -> int:
     session_id = args.session_id
     kb_key = args.kb_key
     timeout = args.timeout
+
+    private_key = resolve_test_private_key(args.private_key)
+    if private_key:
+        addr, token = login_with_private_key(api_base, private_key, timeout=timeout)
+        if args.wallet_id and args.wallet_id != "wallet_demo" and args.wallet_id.lower() != addr.lower():
+            print("ERROR: --wallet-id does not match the provided --private-key address", file=sys.stderr)
+            return 2
+        wallet_id = addr
+        DEFAULT_HEADERS.update({"Authorization": f"Bearer {token}"})
 
     testdata_dir = Path(__file__).resolve().parent / "testdata"
     resume_path = Path(args.resume_file) if args.resume_file else testdata_dir / "resume.json"

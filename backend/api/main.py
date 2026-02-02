@@ -17,6 +17,9 @@ from api.routers.ingestion_jobs import router as ingestion_jobs_router
 from api.routers.resume import router as resume_router
 from api.routers.jd import router as jd_router
 from api.routers.private_dbs import router as private_db_router
+from api.routers.auth import router as auth_router
+from api.routers.public_profile import router as public_profile_router
+from api.routers.audit import router as audit_router
 
 
 def create_app() -> FastAPI:
@@ -45,6 +48,9 @@ def create_app() -> FastAPI:
     common_router.include_router(ingestion_jobs_router)
     common_router.include_router(memory_router)
     common_router.include_router(private_db_router)
+    common_router.include_router(audit_router)
+    common_router.include_router(auth_router)
+    common_router.include_router(public_profile_router)
 
     # Business APIs (workflow-specific)
     biz_router = APIRouter()
@@ -58,6 +64,9 @@ def create_app() -> FastAPI:
     frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
     if frontend_dir.exists():
         app.mount("/console", StaticFiles(directory=str(frontend_dir), html=True), name="console")
+        dist_dir = frontend_dir / "dist"
+        if dist_dir.exists():
+            app.mount("/dist", StaticFiles(directory=str(dist_dir), html=False), name="dist")
 
     return app
 

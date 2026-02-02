@@ -9,7 +9,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from api.schemas.query import QueryRequest, QueryResponse
 from api.deps import get_deps
 from api.routers.kb import _ensure_collection, _text_field_from_cfg, _resolve_kb_config
-from api.routers.owner import is_super_admin
+from api.routers.owner import ensure_can_act_for_data_wallet, is_super_admin
+
+from api.auth.deps import get_optional_auth_wallet_id, resolve_operator_wallet_id
+from api.auth.normalize import normalize_wallet_id
 
 router = APIRouter()
 
@@ -107,7 +110,11 @@ def _extract_kb_texts(docs: list, kb_cfg: dict) -> list[str]:
 
 
 @router.post("/query", response_model=QueryResponse)
-def query(req: QueryRequest, deps=Depends(get_deps)):
+def query(
+    req: QueryRequest,
+    auth_wallet_id: Optional[str] = Depends(get_optional_auth_wallet_id),
+    deps=Depends(get_deps),
+):
     """
     /query 的职责：
     1) 查 DB：app 是否 active
@@ -121,15 +128,26 @@ def query(req: QueryRequest, deps=Depends(get_deps)):
         row = deps.datasource.app_store.get(req.app_id)
         if not row or row.get("status") != "active":
             raise HTTPException(status_code=400, detail=f"app_id={req.app_id} not active in DB")
-        owner = row.get("owner_wallet_id")
-        if owner and owner != req.wallet_id and not is_super_admin(deps, req.wallet_id):
-            raise HTTPException(status_code=403, detail=f"wallet_id does not own app_id={req.app_id}")
+
+        operator_wallet_id = resolve_operator_wallet_id(
+            request_wallet_id=req.wallet_id,
+            auth_wallet_id=auth_wallet_id,
+            allow_insecure=deps.settings.auth_allow_insecure_wallet_id,
+        )
+        data_wallet_id = normalize_wallet_id(req.data_wallet_id) or operator_wallet_id
+        ensure_can_act_for_data_wallet(
+            deps,
+            app_id=req.app_id,
+            operator_wallet_id=operator_wallet_id,
+            data_wallet_id=data_wallet_id,
+        )
 
         # 1) Identity（内部会再校验一次 active）
         identity = deps.identity_manager.resolve_identity(
-            wallet_id=req.wallet_id,
+            wallet_id=operator_wallet_id,
             app_id=req.app_id,
             session_id=req.session_id,
+            data_wallet_id=data_wallet_id,
         )
 
         # 2) intent 校验：只允许 exposed intents
@@ -167,7 +185,7 @@ def query(req: QueryRequest, deps=Depends(get_deps)):
                     if identity.private_db_id:
                         filters["private_db_id"] = identity.private_db_id
                     else:
-                        filters["wallet_id"] = req.wallet_id
+                        filters["wallet_id"] = data_wallet_id
                     if kb_cfg.get("use_allowed_apps_filter"):
                         filters["allowed_apps"] = req.app_id
                     docs = deps.datasource.weaviate.fetch_objects(
@@ -201,7 +219,7 @@ def query(req: QueryRequest, deps=Depends(get_deps)):
                     if identity.private_db_id:
                         filters["private_db_id"] = identity.private_db_id
                     else:
-                        filters["wallet_id"] = req.wallet_id
+                        filters["wallet_id"] = data_wallet_id
                     if kb_cfg.get("use_allowed_apps_filter"):
                         filters["allowed_apps"] = req.app_id
                     docs = deps.datasource.weaviate.fetch_objects(

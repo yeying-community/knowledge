@@ -4,7 +4,11 @@ from pydantic import BaseModel, Field
 
 
 class MemoryPushRequest(BaseModel):
-    wallet_id: str = Field(..., description="用户钱包 ID")
+    wallet_id: Optional[str] = Field(None, description="用户钱包 ID（兼容字段；推荐使用 Authorization）")
+    data_wallet_id: Optional[str] = Field(
+        None,
+        description="可选：数据归属钱包 ID（业务用户）。默认等于 wallet_id。",
+    )
     app_id: str = Field(..., description="业务插件 ID")
     session_id: str = Field(..., description="业务侧会话 ID")
     filename: str = Field(..., description="业务上传的 session 历史文件名")
@@ -16,6 +20,26 @@ class MemoryPushResponse(BaseModel):
     status: str
     messages_written: int
     metas: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class MemoryUploadResponse(BaseModel):
+    bucket: str
+    key: str
+    source_url: str
+    filename: str
+    size_bytes: int
+    content_sha256: str
+    data_wallet_id: str
+    push_result: Optional[MemoryPushResponse] = None
+
+
+class MemoryDeleteResponse(BaseModel):
+    status: str
+    memory_key: str
+    deleted_contexts: int = 0
+    deleted_vectors: int = 0
+    deleted_files: int = 0
+    deleted_session: bool = False
 
 
 class MemorySessionItem(BaseModel):

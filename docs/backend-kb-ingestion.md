@@ -1,62 +1,56 @@
-# KB 元数据写入流程（Step 2）
+# SDD-03 数据入库与向量化
 
-本步骤将上传与 CRUD 接口接入 `kb_documents`，并补齐摄取日志的 wallet 维度。
-
----
-
-## 1. resume / jd 上传写入
-
-写入点：
-
-- `POST /resume/upload`
-- `POST /{app_id}/jd/upload`
-
-行为：
-
-- 写 MinIO（JSON 原文）
-- 写 Weaviate（向量 + properties）
-- 写 SQLite `kb_documents`（doc_id / source_url / file_type / content_sha256）
-
-字段约定：
-
-- `source_type`：`resume` / `jd`
-- `source_id`：`resume_id` / `jd_id`
-- `file_type`：从 `source_url` 解析，默认 `json`
+**项目**：yeying-知识库（RAG-中台）  
+**版本**：v2.1  
+**更新日期**：2026-02-02  
+**适用范围**：后端研发、数据接入、运营
 
 ---
 
-## 2. /kb 文档 CRUD 写入
+## 1. 目的
 
-写入点：
+规范知识库文档写入与向量化流程，确保数据可检索、可审计、可隔离。
 
-- `POST /kb/{app_id}/{kb_key}/documents`
-- `PUT /kb/{app_id}/{kb_key}/documents/{doc_id}`
-- `PATCH /kb/{app_id}/{kb_key}/documents/{doc_id}`
+---
+
+## 2. 数据流
+
+1) 业务侧调用 KB 文档接口  
+2) 写入 Weaviate（向量检索）  
+3) 写入 SQLite（审计与统计）  
+
+---
+
+## 3. 知识库类型与隔离
+
+- `public_kb`：公共共享  
+- `user_upload`：用户私有数据库（基于 `data_wallet_id` / `private_db_id` 隔离）
+
+当 `use_allowed_apps_filter=true` 时，写入/检索会基于 `allowed_apps` 过滤。
+
+---
+
+## 4. Schema 与向量字段
+
+控制台允许超级管理员配置：
+
+- 字段 Schema（字段名、类型、描述）
+- 向量化字段（用于 embedding）
+
+写入文档时：
+
+- `text_field` 为默认向量化字段
+- `vector_fields` 可配置多个字段进行向量化
+
+---
+
+## 5. 主要接口
+
+- `POST /kb/{app_id}/{kb_key}/documents`  
+- `GET /kb/{app_id}/{kb_key}/documents`  
+- `PUT /kb/{app_id}/{kb_key}/documents/{doc_id}`  
+- `PATCH /kb/{app_id}/{kb_key}/documents/{doc_id}`  
 - `DELETE /kb/{app_id}/{kb_key}/documents/{doc_id}`
 
-行为：
+详细字段见 `backend/docs/api.md`。
 
-- create/replace/update 会 upsert `kb_documents`
-- delete 将 `kb_documents.status` 标记为 `deleted`
-
-`source_type` 默认：
-
-- 若 props 中携带 `resume_id` / `jd_id`，自动识别
-- 其他情况默认为 `manual`（仅在 create/replace 时写入）
-
----
-
-## 3. ingestion_logs wallet 维度
-
-- `ingestion_logs` 新增 `wallet_id` 列
-- list 时非超级管理员会按 wallet 过滤
-
----
-
-## 4. 关联代码
-
-- helper：`backend/api/kb_meta.py`
-- resume 上传：`backend/api/routers/resume.py`
-- jd 上传：`backend/api/routers/jd.py`
-- kb CRUD：`backend/api/routers/kb.py`
-- ingestion 日志：`backend/api/routers/ingestion.py`

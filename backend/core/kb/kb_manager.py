@@ -131,8 +131,8 @@ class KnowledgeBaseManager:
             for h in hits or []:
                 props = h.get("properties") or {}
                 meta = h.get("metadata") or {}
-
-                text = props.get("text") or props.get("content") or ""
+                text_field = str(cfg.get("text_field") or "").strip() or "text"
+                text = props.get(text_field) or props.get("text") or props.get("content") or ""
                 if not text:
                     continue
 

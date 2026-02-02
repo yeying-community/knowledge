@@ -1,77 +1,68 @@
-# 运维手册
+# SDD-09 运维与监控
 
-本手册面向部署与运维场景，提供环境配置、健康检查、日志排障与验证建议。
+**项目**：yeying-知识库（RAG-中台）  
+**版本**：v2.1  
+**更新日期**：2026-02-02  
+**适用范围**：运维、SRE、发布人员
 
 ---
 
-## 1. 运行环境
+## 1. 部署模式
 
-建议使用已安装依赖的 Python 环境运行后端（如 conda / venv）。  
-前端由后端自动挂载，默认路径 `/console`。
+建议单实例或小规模水平扩展部署：
 
-常见启动方式：
+- API 服务（FastAPI）
+- SQLite（本地或共享存储）
+- MinIO
+- Weaviate
+- LLM/Embedding 服务
+
+---
+
+## 2. 基础启动
 
 ```bash
+cd backend
 python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
 ---
 
-## 2. 配置文件与环境变量
+## 3. 健康检查
 
-后端配置来源：`.env`（自动向上查找）  
-读取逻辑：`backend/settings/config.py`
-
-关键参数示例：
-
-- `MINIO_*`：MinIO 连接与 bucket
-- `WEAVIATE_*`：向量库连接
-- `OPENAI_*` / `EMBED_*`：模型与向量化
-- `SQLITE_PATH`：SQLite 文件路径
-- `PLUGINS_AUTO_REGISTER`：自动注册插件列表
+1) `/health`  
+2) `/stores/health`  
+3) `/app/list`  
+4) `/kb/list`
 
 ---
 
-## 3. 健康检查流程
+## 4. 日志与审计
 
-1) `GET /health`
-2) `GET /stores/health`
-3) `GET /app/list`
-4) `GET /kb/list`
-5) 可选：`GET /kb/{app}/{kb}/stats`
-
+- 审计日志表：`audit_logs`
+- 关键操作（KB 配置、私有库、插件更新）均写入审计日志
 
 ---
 
-## 4. 典型故障与排查
+## 5. 数据备份
 
-### 4.1 Weaviate “class already exists”
-
-幂等创建产生的提示，不影响功能。  
-重启服务后日志应减少。
-
-### 4.2 KB 查询为空
-
-常见原因：
-
-- user_upload KB 未写入 `wallet_id`
-- `allowed_apps` 与 `app_id` 不匹配
-- KB collection 实际未创建
-
-建议使用：
-
-- `/kb/{app}/{kb}/documents?wallet_id=xxx&data_wallet_id=user_123`
-- `/kb/{app}/{kb}/stats?wallet_id=xxx&data_wallet_id=user_123`
+- SQLite：定期快照备份
+- MinIO：桶级别备份与生命周期配置
+- Weaviate：集合级别快照
 
 ---
 
-## 5. 验证与冒烟
+## 6. 安全建议
 
-脚本位于 `backend/scripts/`：
+- 生产环境必须设置 `JWT_SECRET`
+- 建议开启 `COOKIE_SECURE=true`
+- 不建议在生产环境开启 `AUTH_ALLOW_INSECURE_WALLET_ID`
 
-- `smoke_interviewer_flow.py`
-- `smoke_resume_flow.py`
-- `smoke_jd_flow.py`
-- `run_full_validation.py`
+---
 
-建议在发布前跑通全链路验证脚本，确保 MinIO / Weaviate / LLM 全部连通。
+## 7. 常见排障
+
+- 控制台离线：检查 `/health`
+- KB 查询为空：确认 `wallet_id` / `allowed_apps` 过滤条件
+- Weaviate 报 “already exists”：幂等创建提示
+

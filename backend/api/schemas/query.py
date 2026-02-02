@@ -3,7 +3,11 @@ from pydantic import BaseModel, Field
 
 
 class QueryRequest(BaseModel):
-    wallet_id: str = Field(..., description="操作钱包 ID")
+    wallet_id: Optional[str] = Field(None, description="操作钱包 ID（兼容字段；推荐使用 Authorization）")
+    data_wallet_id: Optional[str] = Field(
+        None,
+        description="可选：数据归属钱包 ID（业务用户）。默认等于 wallet_id。",
+    )
     app_id: str = Field(..., description="业务插件 ID")
     session_id: str = Field(..., description="业务侧会话 ID")
     intent: str = Field(..., description="业务意图，如 generate_questions")

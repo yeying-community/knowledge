@@ -22,6 +22,7 @@ from datasource.sqlstores.ingestion_log_store import IngestionLogStore
 from datasource.sqlstores.kb_document_store import KBDocumentStore
 from datasource.sqlstores.ingestion_job_store import IngestionJobStore
 from datasource.sqlstores.private_db_store import PrivateDBStore
+from datasource.sqlstores.audit_log_store import AuditLogStore
 
 class Datasource:
     """
@@ -46,6 +47,7 @@ class Datasource:
         self.kb_documents = KBDocumentStore(self.sqlite_conn)
         self.ingestion_jobs = IngestionJobStore(self.sqlite_conn)
         self.private_dbs = PrivateDBStore(self.sqlite_conn)
+        self.audit_logs = AuditLogStore(self.sqlite_conn)
 
         # ---------- MinIO ----------
         self.minio_conn = None

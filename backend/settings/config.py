@@ -70,3 +70,13 @@ class Settings(BaseModel):
 
     # ---------- Access Control ----------
     super_admin_wallet_id: str = os.getenv("SUPER_ADMIN_WALLET_ID", "super_admin")
+
+    jwt_secret: str = os.getenv("JWT_SECRET", "replace-this-in-production")
+    access_ttl_ms: int = _env_int("ACCESS_TTL_MS", 15 * 60 * 1000)
+    refresh_ttl_ms: int = _env_int("REFRESH_TTL_MS", 7 * 24 * 60 * 60 * 1000)
+    cookie_samesite: str = os.getenv("COOKIE_SAMESITE", "lax")
+    cookie_secure: bool = _env_bool("COOKIE_SECURE", "false")
+    auth_allow_insecure_wallet_id: bool = _env_bool("AUTH_ALLOW_INSECURE_WALLET_ID", "false")
+    ucan_aud: str = os.getenv("UCAN_AUD", "did:web:localhost:8000")
+    ucan_resource: str = os.getenv("UCAN_RESOURCE", "profile")
+    ucan_action: str = os.getenv("UCAN_ACTION", "read")

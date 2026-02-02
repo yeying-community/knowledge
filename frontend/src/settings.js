@@ -3,12 +3,12 @@ import {
   loadApiBase,
   setApiBase,
   loadWalletId,
-  setWalletId,
   roleLabel,
   isSuperAdmin,
   ensureLoggedIn,
 } from "./state.js";
 import { ping } from "./api.js";
+import { logout as sdkLogout } from "../assets/vendor/web3-bs.esm.js";
 
 const apiBaseInput = document.getElementById("api-base");
 const statusDot = document.getElementById("api-status-dot");
@@ -17,6 +17,7 @@ const rolePill = document.getElementById("role-pill");
 const walletIdDisplay = document.getElementById("wallet-id-display");
 const backBtn = document.getElementById("back-btn");
 const loginBtn = document.getElementById("login-btn");
+const logoutBtn = document.getElementById("logout-btn");
 const settingsForm = document.getElementById("settings-form");
 const settingsSave = document.getElementById("settings-save");
 const settingsClear = document.getElementById("settings-clear");
@@ -26,7 +27,17 @@ const metricApiBase = document.getElementById("metric-api-base");
 const metricApiBaseTrend = document.getElementById("metric-api-base-trend");
 const metricWalletId = document.getElementById("metric-wallet-id");
 const metricRoleLabel = document.getElementById("metric-role-label");
-const walletIdInput = document.getElementById("wallet-id");
+
+const AUTH_TOKEN_KEY = "rag_auth_token";
+
+function normalizeBaseUrl(value) {
+  return (value || "").replace(/\/+$/, "");
+}
+
+function resolveAuthBaseUrl() {
+  const base = normalizeBaseUrl(state.apiBase);
+  return base ? `${base}/api/v1/public/auth` : "/api/v1/public/auth";
+}
 
 function setStatus(online) {
   statusDot.style.background = online ? "#39d98a" : "#ff6a88";
@@ -51,9 +62,6 @@ function renderIdentity() {
   }
   if (metricRoleLabel) {
     metricRoleLabel.textContent = roleLabel();
-  }
-  if (walletIdInput) {
-    walletIdInput.value = state.walletId || "";
   }
 }
 
@@ -80,9 +88,6 @@ async function testConnection() {
 }
 
 function saveSettings() {
-  if (walletIdInput) {
-    setWalletId(walletIdInput.value.trim());
-  }
   setApiBase(apiBaseInput.value.trim());
   renderIdentity();
   renderApiBase();
@@ -122,4 +127,24 @@ if (loginBtn) {
     const next = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
     window.location.href = `./login.html?next=${next}`;
   });
+}
+
+async function doLogout() {
+  settingsHint.textContent = "正在退出登录...";
+  try {
+    await sdkLogout({
+      baseUrl: resolveAuthBaseUrl(),
+      tokenStorageKey: AUTH_TOKEN_KEY,
+      storeToken: true,
+    });
+  } catch {
+  }
+  localStorage.removeItem("rag_wallet_id");
+  localStorage.removeItem("rag_is_super_admin");
+  const next = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+  window.location.href = `./login.html?next=${next}`;
+}
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => doLogout());
 }

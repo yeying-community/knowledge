@@ -148,6 +148,16 @@ class MemoryContextsStore:
             (memory_key,)
         )
 
+    def list_urls_by_memory(self, memory_key: str) -> List[str]:
+        rows = self.conn.query_all(
+            """
+            SELECT DISTINCT url FROM memory_contexts
+             WHERE memory_key = ?
+            """,
+            (memory_key,),
+        )
+        return [row.get("url") for row in rows if row.get("url")]
+
     # -------- 状态更新 --------
     def mark_summarized(self, uid: str) -> None:
         self.conn.execute(
@@ -223,3 +233,17 @@ class MemoryContextsStore:
             tuple(params),
         )
         return self.get(uid)
+
+    def delete(self, uid: str) -> int:
+        cur = self.conn.execute(
+            "DELETE FROM memory_contexts WHERE uid = ?",
+            (uid,),
+        )
+        return int(cur.rowcount or 0)
+
+    def delete_by_memory(self, memory_key: str) -> int:
+        cur = self.conn.execute(
+            "DELETE FROM memory_contexts WHERE memory_key = ?",
+            (memory_key,),
+        )
+        return int(cur.rowcount or 0)

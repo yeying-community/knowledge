@@ -10,6 +10,8 @@ from api.deps import get_deps
 from api.kb_meta import infer_file_type
 from api.schemas.ingestion import IngestionLogCreate, IngestionLogList, IngestionLogItem
 from api.routers.owner import ensure_app_owner, require_wallet_id, is_super_admin
+from api.auth.deps import get_optional_auth_wallet_id, resolve_operator_wallet_id
+from api.auth.normalize import normalize_wallet_id
 from api.routers.kb import _resolve_kb_config
 from datasource.objectstores.path_builder import PathBuilder
 
@@ -21,12 +23,17 @@ def list_logs(
     limit: int = 50,
     offset: int = 0,
     wallet_id: str | None = None,
+    auth_wallet_id: str | None = Depends(get_optional_auth_wallet_id),
     app_id: str | None = None,
     kb_key: str | None = None,
     status: str | None = None,
     deps=Depends(get_deps),
 ):
-    wallet_id = require_wallet_id(wallet_id)
+    wallet_id = resolve_operator_wallet_id(
+        request_wallet_id=wallet_id,
+        auth_wallet_id=auth_wallet_id,
+        allow_insecure=deps.settings.auth_allow_insecure_wallet_id,
+    )
     if not app_id:
         raise HTTPException(status_code=400, detail="app_id is required")
     ensure_app_owner(deps, app_id, wallet_id)
@@ -58,9 +65,17 @@ def list_logs(
 
 
 @router.post("/logs")
-def create_log(req: IngestionLogCreate, deps=Depends(get_deps)):
+def create_log(
+    req: IngestionLogCreate,
+    auth_wallet_id: str | None = Depends(get_optional_auth_wallet_id),
+    deps=Depends(get_deps),
+):
     try:
-        wallet_id = require_wallet_id(req.wallet_id)
+        wallet_id = resolve_operator_wallet_id(
+            request_wallet_id=req.wallet_id,
+            auth_wallet_id=auth_wallet_id,
+            allow_insecure=deps.settings.auth_allow_insecure_wallet_id,
+        )
         if not req.app_id:
             raise HTTPException(status_code=400, detail="app_id is required")
         ensure_app_owner(deps, req.app_id, wallet_id)
@@ -80,15 +95,21 @@ def create_log(req: IngestionLogCreate, deps=Depends(get_deps)):
 
 @router.post("/upload")
 def upload_file(
-    wallet_id: str = Form(...),
+    wallet_id: str | None = Form(None),
     app_id: str = Form(...),
     kb_key: str = Form(...),
     data_wallet_id: str | None = Form(None),
     filename: str | None = Form(None),
     file: UploadFile = File(...),
+    auth_wallet_id: str | None = Depends(get_optional_auth_wallet_id),
     deps=Depends(get_deps),
 ):
     try:
+        wallet_id = resolve_operator_wallet_id(
+            request_wallet_id=wallet_id,
+            auth_wallet_id=auth_wallet_id,
+            allow_insecure=deps.settings.auth_allow_insecure_wallet_id,
+        )
         ensure_app_owner(deps, app_id, wallet_id)
         if not deps.datasource.minio:
             raise HTTPException(status_code=400, detail="MinIO is not enabled")
@@ -97,7 +118,7 @@ def upload_file(
 
         cfg = _resolve_kb_config(deps, app_id, kb_key)
         kb_type = str(cfg.get("type") or "").strip()
-        storage_wallet_id = data_wallet_id or wallet_id
+        storage_wallet_id = normalize_wallet_id(data_wallet_id) or wallet_id
         if kb_type != "user_upload":
             data_wallet_id = None
 

@@ -21,7 +21,7 @@ prompt:
 
 knowledge_bases:
   jd_kb:
-    type: static_kb
+    type: public_kb
     use_allowed_apps_filter: False
     collection: kb_interviewer_jd
     text_field: content

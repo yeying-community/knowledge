@@ -1,64 +1,56 @@
-# RAG Validation Guide
+# 验证脚本说明（yeying-知识库）
 
-This directory provides smoke test scripts and test data to validate the full
-RAG platform flow (MinIO, SQLite, Weaviate, memory, KB CRUD, and query).
+**更新日期**：2026-02-02  
+**适用范围**：联调、发布前验证
 
+---
 
-## Test Data
+## 1. 测试数据
 
-- `backend/scripts/testdata/resume.json`: sample resume payload (business upload).
-- `backend/scripts/testdata/session_history.json`: sample chat history (business upload).
-- `backend/scripts/testdata/jd.json`: sample JD payload (business upload).
+- `backend/scripts/testdata/resume.json`
+- `backend/scripts/testdata/session_history.json`
+- `backend/scripts/testdata/jd.json`
 
-## Full Validation (recommended)
+---
+
+## 2. 全量验证
 
 ```bash
 python backend/scripts/run_full_validation.py --timeout 120
 ```
 
-Optional flags:
+可选参数：
+
 - `--resume-file /path/to/resume.json`
 - `--session-file /path/to/session_history.json`
 - `--jd-file /path/to/jd.json`
-- `--skip-query` (skip LLM query step)
-- `--skip-default` (skip missing resume_id fallback query)
+- `--skip-query`
+- `--skip-default`
 
-Note:
-- New endpoints require `wallet_id` for app/KB/ingestion APIs. Use `--wallet-id` to override.
+---
 
-## Interviewer Session Memory Flow
+## 3. 冒烟脚本
 
-```bash
-python backend/scripts/smoke_interviewer_flow.py --timeout 120
-```
+- `python backend/scripts/smoke_interviewer_flow.py`
+- `python backend/scripts/smoke_resume_flow.py`
+- `python backend/scripts/smoke_jd_flow.py`
 
-## Resume Upload + Resume ID Flow
+---
 
-This flow calls `/resume/upload` and then queries by `resume_id` without `query`.
-
-```bash
-python backend/scripts/smoke_resume_flow.py --timeout 120
-```
-
-## JD Upload + JD ID Flow
-
-```bash
-python backend/scripts/smoke_jd_flow.py --timeout 120
-```
-
-## Tenant Console Validation
-
-Validate tenant isolation + app status APIs (no LLM required):
+## 4. 控制台权限校验
 
 ```bash
 python backend/scripts/validate_console_access.py --wallet-id wallet_demo --app-id interviewer
 ```
 
-Optional:
-- `--super-admin-id` to check super admin list (defaults to `SUPER_ADMIN_WALLET_ID` env).
+可选：
 
-## Notes
+- `--super-admin-id`（默认读取 `SUPER_ADMIN_WALLET_ID`）
 
-- MinIO path convention: `memory/{wallet_id}/{app_id}/{session_id}/{filename}`
-- Private KB documents must include `wallet_id` (and `allowed_apps` if enabled)
-  to enforce data isolation.
+---
+
+## 5. 注意事项
+
+- 生产环境建议使用 SIWE/JWT；开发调试可通过 `AUTH_ALLOW_INSECURE_WALLET_ID=true` 放行
+- 私有库写入需保证 `wallet_id` 与 `allowed_apps` 字段正确
+

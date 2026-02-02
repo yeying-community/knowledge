@@ -9,6 +9,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 
 from api.deps import get_deps
+from api.auth.deps import get_optional_auth_wallet_id, resolve_operator_wallet_id
+from api.auth.normalize import normalize_wallet_id
 from api.kb_meta import infer_file_type, sha256_text
 from api.routers.kb import _resolve_kb_config
 from api.routers.owner import ensure_app_owner, is_super_admin, require_wallet_id
@@ -50,33 +52,41 @@ def _as_job_info(row) -> IngestionJobInfo:
 
 
 @router.post("", response_model=IngestionJobInfo)
-def create_job(req: IngestionJobCreate, run: bool = False, deps=Depends(get_deps)):
+def create_job(
+    req: IngestionJobCreate,
+    run: bool = False,
+    auth_wallet_id: Optional[str] = Depends(get_optional_auth_wallet_id),
+    deps=Depends(get_deps),
+):
     try:
-        ensure_app_owner(deps, req.app_id, req.wallet_id)
+        operator_wallet_id = resolve_operator_wallet_id(
+            request_wallet_id=req.wallet_id,
+            auth_wallet_id=auth_wallet_id,
+            allow_insecure=deps.settings.auth_allow_insecure_wallet_id,
+        )
+        ensure_app_owner(deps, req.app_id, operator_wallet_id)
         if not deps.datasource.minio and req.content:
             raise HTTPException(status_code=400, detail="MinIO is required for inline content")
 
         cfg = _resolve_kb_config(deps, req.app_id, req.kb_key)
         kb_type = str(cfg.get("type") or "").strip()
-        data_wallet_id = (req.data_wallet_id or "").strip() or None
+        data_wallet_id = normalize_wallet_id(req.data_wallet_id) or None
         private_db_id = None
         if kb_type == "user_upload":
+            effective_data_wallet_id = data_wallet_id or operator_wallet_id
             private_db_id = resolve_private_db_id(
                 deps,
                 app_id=req.app_id,
-                wallet_id=req.wallet_id,
+                operator_wallet_id=operator_wallet_id,
+                data_wallet_id=effective_data_wallet_id,
                 private_db_id=req.private_db_id,
                 session_id=req.session_id,
                 allow_create=True,
             )
-            if not private_db_id and not data_wallet_id:
-                raise HTTPException(status_code=400, detail="session_id or private_db_id is required for user_upload")
-            if not private_db_id and data_wallet_id:
-                private_db_id = data_wallet_id
-            data_wallet_id = data_wallet_id or req.wallet_id
+            data_wallet_id = effective_data_wallet_id
         else:
             data_wallet_id = None
-        storage_wallet_id = data_wallet_id if kb_type == "user_upload" else req.wallet_id
+        storage_wallet_id = data_wallet_id if kb_type == "user_upload" else operator_wallet_id
 
         source_url = req.source_url
         file_type = req.file_type
@@ -102,9 +112,9 @@ def create_job(req: IngestionJobCreate, run: bool = False, deps=Depends(get_deps
             options["metadata"] = req.metadata
 
         job_id = deps.datasource.ingestion_jobs.create(
-            wallet_id=req.wallet_id,
+            wallet_id=operator_wallet_id,
             data_wallet_id=data_wallet_id,
-            private_db_id=private_db_id or data_wallet_id,
+            private_db_id=private_db_id,
             app_id=req.app_id,
             kb_key=req.kb_key,
             job_type="kb_ingest",
@@ -132,6 +142,7 @@ def create_job(req: IngestionJobCreate, run: bool = False, deps=Depends(get_deps
 @router.get("", response_model=IngestionJobList)
 def list_jobs(
     wallet_id: Optional[str] = None,
+    auth_wallet_id: Optional[str] = Depends(get_optional_auth_wallet_id),
     data_wallet_id: Optional[str] = None,
     private_db_id: Optional[str] = None,
     session_id: Optional[str] = None,
@@ -141,24 +152,34 @@ def list_jobs(
     offset: int = 0,
     deps=Depends(get_deps),
 ):
-    wallet_id = require_wallet_id(wallet_id)
+    wallet_id = resolve_operator_wallet_id(
+        request_wallet_id=wallet_id,
+        auth_wallet_id=auth_wallet_id,
+        allow_insecure=deps.settings.auth_allow_insecure_wallet_id,
+    )
     if (session_id or private_db_id) and not app_id:
         raise HTTPException(status_code=400, detail="app_id is required when using session_id/private_db_id")
     if app_id:
         ensure_app_owner(deps, app_id, wallet_id)
-    private_db_id = resolve_private_db_id(
-        deps,
-        app_id=app_id or "",
-        wallet_id=wallet_id,
-        private_db_id=private_db_id,
-        session_id=session_id,
-        allow_create=False,
-    )
+    resolved_private_db_id = (private_db_id or "").strip() or None
+    effective_data_wallet_id = normalize_wallet_id(data_wallet_id) or None
+    if session_id:
+        if not effective_data_wallet_id:
+            raise HTTPException(status_code=400, detail="data_wallet_id is required when using session_id")
+        resolved_private_db_id = resolve_private_db_id(
+            deps,
+            app_id=app_id or "",
+            operator_wallet_id=wallet_id,
+            data_wallet_id=effective_data_wallet_id,
+            private_db_id=resolved_private_db_id,
+            session_id=session_id,
+            allow_create=False,
+        )
     wallet_filter = None if is_super_admin(deps, wallet_id) else wallet_id
     rows = deps.datasource.ingestion_jobs.list(
         wallet_id=wallet_filter,
-        data_wallet_id=data_wallet_id,
-        private_db_id=private_db_id,
+        data_wallet_id=effective_data_wallet_id,
+        private_db_id=resolved_private_db_id,
         app_id=app_id,
         status=status,
         limit=limit,
@@ -168,8 +189,17 @@ def list_jobs(
 
 
 @router.get("/{job_id}", response_model=IngestionJobInfo)
-def get_job(job_id: int, wallet_id: Optional[str] = None, deps=Depends(get_deps)):
-    wallet_id = require_wallet_id(wallet_id)
+def get_job(
+    job_id: int,
+    wallet_id: Optional[str] = None,
+    auth_wallet_id: Optional[str] = Depends(get_optional_auth_wallet_id),
+    deps=Depends(get_deps),
+):
+    wallet_id = resolve_operator_wallet_id(
+        request_wallet_id=wallet_id,
+        auth_wallet_id=auth_wallet_id,
+        allow_insecure=deps.settings.auth_allow_insecure_wallet_id,
+    )
     row = deps.datasource.ingestion_jobs.get(job_id)
     if not row:
         raise HTTPException(status_code=404, detail="job not found")
@@ -178,8 +208,17 @@ def get_job(job_id: int, wallet_id: Optional[str] = None, deps=Depends(get_deps)
 
 
 @router.post("/{job_id}/run", response_model=IngestionJobInfo)
-def run_job(job_id: int, wallet_id: Optional[str] = None, deps=Depends(get_deps)):
-    wallet_id = require_wallet_id(wallet_id)
+def run_job(
+    job_id: int,
+    wallet_id: Optional[str] = None,
+    auth_wallet_id: Optional[str] = Depends(get_optional_auth_wallet_id),
+    deps=Depends(get_deps),
+):
+    wallet_id = resolve_operator_wallet_id(
+        request_wallet_id=wallet_id,
+        auth_wallet_id=auth_wallet_id,
+        allow_insecure=deps.settings.auth_allow_insecure_wallet_id,
+    )
     row = deps.datasource.ingestion_jobs.get(job_id)
     if not row:
         raise HTTPException(status_code=404, detail="job not found")
@@ -193,11 +232,16 @@ def run_job(job_id: int, wallet_id: Optional[str] = None, deps=Depends(get_deps)
 def list_runs(
     job_id: int,
     wallet_id: Optional[str] = None,
+    auth_wallet_id: Optional[str] = Depends(get_optional_auth_wallet_id),
     limit: int = 50,
     offset: int = 0,
     deps=Depends(get_deps),
 ):
-    wallet_id = require_wallet_id(wallet_id)
+    wallet_id = resolve_operator_wallet_id(
+        request_wallet_id=wallet_id,
+        auth_wallet_id=auth_wallet_id,
+        allow_insecure=deps.settings.auth_allow_insecure_wallet_id,
+    )
     job = deps.datasource.ingestion_jobs.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="job not found")
@@ -220,13 +264,18 @@ def list_runs(
 @router.get("/presets", response_model=IngestionJobPreset)
 def ingestion_job_presets(
     wallet_id: Optional[str] = None,
+    auth_wallet_id: Optional[str] = Depends(get_optional_auth_wallet_id),
     data_wallet_id: Optional[str] = None,
     app_id: Optional[str] = None,
     kb_key: Optional[str] = None,
     limit: int = 20,
     deps=Depends(get_deps),
 ):
-    wallet_id = require_wallet_id(wallet_id)
+    wallet_id = resolve_operator_wallet_id(
+        request_wallet_id=wallet_id,
+        auth_wallet_id=auth_wallet_id,
+        allow_insecure=deps.settings.auth_allow_insecure_wallet_id,
+    )
     if not app_id or not kb_key:
         raise HTTPException(status_code=400, detail="app_id and kb_key are required")
     ensure_app_owner(deps, app_id, wallet_id)
@@ -240,7 +289,7 @@ def ingestion_job_presets(
     kb_type = str(cfg.get("type") or "").strip()
     owner_wallet_id = wallet_id
     if kb_type == "user_upload":
-        owner_wallet_id = (data_wallet_id or "").strip() or wallet_id
+        owner_wallet_id = normalize_wallet_id(data_wallet_id) or wallet_id
     prefix = PathBuilder.kb_prefix(owner_wallet_id, app_id, kb_key)
     keys = deps.datasource.minio.list(bucket=bucket, prefix=prefix, recursive=True) or []
     if limit:

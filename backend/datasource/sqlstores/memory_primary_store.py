@@ -115,3 +115,10 @@ class MemoryPrimaryStore:
             "SELECT * FROM memory_primary WHERE memory_key = ?",
             (memory_key,),
         )
+
+    def delete(self, memory_key: str) -> int:
+        cur = self.conn.execute(
+            "DELETE FROM memory_primary WHERE memory_key = ?",
+            (memory_key,),
+        )
+        return int(cur.rowcount or 0)

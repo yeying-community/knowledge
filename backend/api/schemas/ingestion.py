@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class IngestionLogCreate(BaseModel):
-    wallet_id: str = Field(..., description="开发者钱包 ID（权限校验）")
+    wallet_id: Optional[str] = Field(None, description="开发者钱包 ID（兼容字段；推荐使用 Authorization）")
     status: str = Field(..., description="started|success|failed|info")
     message: Optional[str] = Field("", description="Log message")
     app_id: str = Field(..., description="Plugin app_id")

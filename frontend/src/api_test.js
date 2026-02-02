@@ -8,6 +8,18 @@ import {
   ensureLoggedIn,
 } from "./state.js";
 import { ping, fetchApps, fetchKBList, fetchAppIntents } from "./api.js";
+import { authFetch } from "../assets/vendor/web3-bs.esm.js";
+
+const AUTH_TOKEN_KEY = "rag_auth_token";
+
+function normalizeBaseUrl(value) {
+  return (value || "").replace(/\/+$/, "");
+}
+
+function resolveAuthBaseUrl() {
+  const base = normalizeBaseUrl(state.apiBase);
+  return base ? `${base}/api/v1/public/auth` : "/api/v1/public/auth";
+}
 
 const apiBaseInput = document.getElementById("api-base");
 const refreshBtn = document.getElementById("refresh-btn");
@@ -164,11 +176,13 @@ function renderIntentGuide() {
 
 const TEST_GROUPS = [
   { id: "all", label: "全部" },
-  { id: "interviewer", label: "面试官流程" },
-  { id: "core", label: "应用 / KB" },
-  { id: "ingestion", label: "摄取" },
-  { id: "private", label: "私有库" },
-  { id: "memory", label: "记忆" },
+  { id: "interviewer", label: "Interviewer（业务）" },
+  { id: "auth", label: "鉴权" },
+  { id: "app", label: "应用（租户）" },
+  { id: "kb", label: "知识库（管理员）" },
+  { id: "ingestion", label: "摄取（管理员）" },
+  { id: "memory", label: "记忆（管理员）" },
+  { id: "stores", label: "存储健康" },
 ];
 
 const INTENT_GUIDES = {
@@ -186,24 +200,84 @@ const INTENT_GUIDES = {
 };
 
 const INTERVIEWER_TEST_IDS = new Set([
+  "auth-profile",
+  "stores-health",
+  "app-register",
+  "app-list",
+  "app-intents",
+  "app-status",
   "resume-upload",
   "jd-upload",
   "query",
-  "memory-sessions",
   "kb-stats",
   "kb-docs",
-  "private-create",
-  "private-bind",
-  "private-sessions",
-  "private-unbind",
+  "memory-upload",
+  "memory-push",
+  "memory-delete",
+  "memory-sessions",
 ]);
 
 const API_TEST_CASES = [
   {
+    id: "auth-profile",
+    title: "当前登录身份",
+    method: "GET",
+    group: "auth",
+    buildPath: () => "/api/v1/public/profile",
+    summary: "验证当前 Token 是否生效。",
+    details: "用于确认浏览器里保存的 access token 可用（401 表示需要重新登录）。",
+  },
+  {
+    id: "stores-health",
+    title: "存储健康检查",
+    method: "GET",
+    group: "stores",
+    buildPath: () => "/stores/health",
+    summary: "检查 SQLite / MinIO / Weaviate / LLM 配置状态。",
+    details: "这是平台自检接口，不涉及租户隔离。",
+  },
+  {
+    id: "app-register",
+    title: "注册/启用应用",
+    method: "POST",
+    group: "app",
+    buildPath: () => "/app/register",
+    buildBody: (ctx) => ({
+      app_id: ctx.appId,
+      wallet_id: ctx.walletId,
+    }),
+    summary: "将 app 置为 active（租户归属=当前钱包）。",
+    details:
+      "生产环境建议走“管理后台审核 / SOP”流程后再注册。\n" +
+      "当前接口要求登录鉴权（Authorization），wallet_id 仅为兼容字段。",
+    requiresApp: true,
+  },
+  {
+    id: "app-list",
+    title: "应用列表",
+    method: "GET",
+    group: "app",
+    buildPath: () => "/app/list",
+    buildQuery: (ctx) => ({ wallet_id: ctx.walletId }),
+    summary: "查看当前钱包拥有的 app 列表。",
+    details: "若你是 SUPER_ADMIN，则会返回全部 app。",
+  },
+  {
+    id: "app-intents",
+    title: "应用意图列表",
+    method: "GET",
+    group: "app",
+    buildPath: (ctx) => `/app/${ctx.appId}/intents`,
+    summary: "查看 app 的 intents 与 exposed intents。",
+    details:
+      "Interviewer 对外只暴露 generate_questions，内部 basic/project/scenario 由插件编排调用。",
+    requiresApp: true,
+  },
+  {
     id: "app-status",
     title: "应用状态",
     method: "GET",
-    group: "core",
+    group: "app",
     buildPath: (ctx) => `/app/${ctx.appId}/status`,
     buildQuery: (ctx) => ({ wallet_id: ctx.walletId }),
     summary: "校验 app 是否已注册并处于 active。",
@@ -214,31 +288,24 @@ const API_TEST_CASES = [
     id: "kb-stats",
     title: "KB 统计",
     method: "GET",
-    group: "core",
+    group: "kb",
     buildPath: (ctx) => `/kb/${ctx.appId}/${ctx.kbKey}/stats`,
-    buildQuery: (ctx) => ({
-      wallet_id: ctx.walletId,
-      session_id: ctx.sessionId || undefined,
-      private_db_id: ctx.privateDbId || undefined,
-      data_wallet_id: ctx.dataWalletId || undefined,
-    }),
+    buildQuery: (ctx) => ({ wallet_id: ctx.walletId }),
     summary: "查看 KB 文档量 / 向量量。",
     details:
-      "适用于确认 KB 是否有数据。若是 user_upload 类型，可通过 session/private_db/data_wallet 过滤。",
+      "适用于确认 KB 是否有数据。\n" +
+      "注：private_db/session/data_wallet 过滤属于高级用法（当前测试页默认不带）。",
   },
   {
     id: "kb-docs",
     title: "KB 文档列表",
     method: "GET",
-    group: "core",
+    group: "kb",
     buildPath: (ctx) => `/kb/${ctx.appId}/${ctx.kbKey}/documents`,
     buildQuery: (ctx) => ({
       wallet_id: ctx.walletId,
       limit: 5,
       offset: 0,
-      session_id: ctx.sessionId || undefined,
-      private_db_id: ctx.privateDbId || undefined,
-      data_wallet_id: ctx.dataWalletId || undefined,
     }),
     summary: "拉取少量文档，验证过滤条件。",
     details:
@@ -293,8 +360,7 @@ const API_TEST_CASES = [
     buildBody: (ctx) => ({
       wallet_id: ctx.walletId,
       app_id: ctx.appId,
-      session_id: ctx.sessionId || undefined,
-      private_db_id: ctx.privateDbId || undefined,
+      session_id: ctx.sessionId || apiSeeds.sessionId,
       metadata: { source: "ui-test" },
       resume: {
         name: "Alex Chen",
@@ -302,9 +368,9 @@ const API_TEST_CASES = [
         text: "Backend engineer with 5 years of experience.",
       },
     }),
-    summary: "上传简历 JSON 到 user_upload KB。",
+    summary: "上传简历 JSON 到用户私有数据库（user_upload）。",
     details:
-      "返回 resume_id，用于 query 时拉取简历文本。若使用 private_db_id，会写入该私有库。",
+      "返回 resume_id，用于 query 时拉取简历文本。默认按 (app_id, data_wallet_id) 自动归并私有库。",
   },
   {
     id: "jd-upload",
@@ -315,8 +381,7 @@ const API_TEST_CASES = [
     buildBody: (ctx) => ({
       wallet_id: ctx.walletId,
       app_id: ctx.appId,
-      session_id: ctx.sessionId || undefined,
-      private_db_id: ctx.privateDbId || undefined,
+      session_id: ctx.sessionId || apiSeeds.sessionId,
       metadata: { source: "ui-test" },
       jd: {
         title: "Backend Engineer",
@@ -324,7 +389,7 @@ const API_TEST_CASES = [
         text: "We are looking for a Backend Engineer...",
       },
     }),
-    summary: "上传 JD JSON 到 user_upload KB。",
+    summary: "上传 JD JSON 到用户私有数据库（user_upload）。",
     details:
       "返回 jd_id。若不传 jd_id，query 会尝试从 jd_kb 自动检索文本。",
   },
@@ -337,14 +402,17 @@ const API_TEST_CASES = [
     buildBody: (ctx) => ({
       wallet_id: ctx.walletId,
       app_id: ctx.appId,
-      session_id: ctx.sessionId || undefined,
-      private_db_id: ctx.privateDbId || undefined,
-      intent: ctx.intent || defaultIntent || "default",
+      session_id: ctx.sessionId || apiSeeds.sessionId,
+      intent: ctx.intent || defaultIntent || "generate_questions",
       resume_id: ctx.resumeId || undefined,
       jd_id: ctx.jdId || undefined,
       target: ctx.target || undefined,
       company: ctx.company || undefined,
-      intent_params: {},
+      intent_params: {
+        basic_count: 3,
+        project_count: 2,
+        scenario_count: 2,
+      },
       query: "总结候选人的优势。",
     }),
     summary: "核心业务查询入口。",
@@ -353,59 +421,43 @@ const API_TEST_CASES = [
       "只有简历：提供 resume_id 或 intent_params.resume_text；若未传 jd_id，可能触发 JD 自动检索（配置开启）。\n" +
       "简历 + JD：提供 resume_id + jd_id（推荐），或直接用 intent_params.resume_text/jd_text。\n" +
       "简历/JD 都没有：必须提供 query 或 intent_params（否则 400）。\n" +
-      "resume_id/jd_id 会从 user_upload 拉文本；target/company 会写入 intent_params。",
+      "resume_id/jd_id 会从用户私有数据库（user_upload）拉文本；target/company 会写入 intent_params。",
   },
   {
-    id: "private-create",
-    title: "创建私有库",
+    id: "memory-upload",
+    title: "记忆文件上传",
     method: "POST",
-    group: "private",
-    buildPath: () => "/private_dbs",
+    group: "memory",
+    buildPath: () => "/memory/upload",
     buildBody: (ctx) => ({
       wallet_id: ctx.walletId,
+      data_wallet_id: ctx.dataWalletId || undefined,
       app_id: ctx.appId,
+      session_id: ctx.sessionId || apiSeeds.sessionId,
+      filename: "session_history.json",
     }),
-    summary: "创建私有库并返回 private_db_id。",
+    summary: "上传 session_history.json 到 MinIO（记忆文件）。",
     details:
-      "私有库按 app_id 隔离，可用于跨会话聚合业务用户数据。",
+      "上传后需调用 /memory/push 解析写入记忆。上传路径为 memory/<data_wallet>/<app>/<session>/。",
+    requiresFile: true,
   },
   {
-    id: "private-bind",
-    title: "绑定会话",
+    id: "memory-push",
+    title: "记忆写入",
     method: "POST",
-    group: "private",
-    buildPath: (ctx) => `/private_dbs/${ctx.privateDbId || "PRIVATE_DB_ID"}/bind`,
+    group: "memory",
+    buildPath: () => "/memory/push",
     buildBody: (ctx) => ({
       wallet_id: ctx.walletId,
+      data_wallet_id: ctx.dataWalletId || undefined,
       app_id: ctx.appId,
-      session_ids: [ctx.sessionId || apiSeeds.sessionId],
+      session_id: ctx.sessionId || apiSeeds.sessionId,
+      filename: "session_history.json",
+      description: "api-test",
     }),
-    summary: "将 session_id 绑定到指定私有库。",
+    summary: "从 MinIO 读取会话文件并写入记忆。",
     details:
-      "绑定后，查询与写入可通过 private_db_id 聚合多个 session。",
-  },
-  {
-    id: "private-sessions",
-    title: "私有库会话列表",
-    method: "GET",
-    group: "private",
-    buildPath: (ctx) => `/private_dbs/${ctx.privateDbId || "PRIVATE_DB_ID"}/sessions`,
-    buildQuery: (ctx) => ({ wallet_id: ctx.walletId, app_id: ctx.appId }),
-    summary: "查看私有库绑定的会话。",
-    details:
-      "用于审计与排查绑定关系。",
-  },
-  {
-    id: "private-unbind",
-    title: "解绑会话",
-    method: "DELETE",
-    group: "private",
-    buildPath: (ctx) =>
-      `/private_dbs/${ctx.privateDbId || "PRIVATE_DB_ID"}/sessions/${ctx.sessionId || apiSeeds.sessionId}`,
-    buildQuery: (ctx) => ({ wallet_id: ctx.walletId, app_id: ctx.appId }),
-    summary: "解绑指定 session。",
-    details:
-      "解绑后该 session 不再归属该私有库。",
+      "与 /memory/upload 搭配使用；文件需位于 memory/<data_wallet>/<app>/<session>/。",
   },
   {
     id: "memory-sessions",
@@ -423,6 +475,24 @@ const API_TEST_CASES = [
     summary: "查看记忆会话列表。",
     details:
       "用于检查记忆是否被写入，支持按 data_wallet_id 过滤业务用户。",
+  },
+  {
+    id: "memory-delete",
+    title: "删除记忆会话",
+    method: "DELETE",
+    group: "memory",
+    buildPath: () => "/memory/sessions",
+    buildQuery: (ctx) => ({
+      wallet_id: ctx.walletId,
+      data_wallet_id: ctx.dataWalletId || undefined,
+      app_id: ctx.appId,
+      session_id: ctx.sessionId || apiSeeds.sessionId,
+      delete_vectors: 1,
+      delete_files: 0,
+    }),
+    summary: "按 session_id 删除记忆（含向量）。",
+    details:
+      "将删除主/辅记忆与会话映射；可选 delete_files=1 同步删除 MinIO 文件。",
   },
 ];
 
@@ -751,7 +821,15 @@ async function runTest(testId) {
     if (runNode) runNode.textContent = "-";
     lastRequests.set(item.id, requestMeta);
     const startAt = performance.now();
-    const res = await fetch(fullUrl, options);
+    const res = await authFetch(
+      fullUrl,
+      options,
+      {
+        baseUrl: resolveAuthBaseUrl(),
+        tokenStorageKey: AUTH_TOKEN_KEY,
+        storeToken: true,
+      }
+    );
     const endAt = performance.now();
     const durationMs = Math.round(endAt - startAt);
     const text = await res.text();

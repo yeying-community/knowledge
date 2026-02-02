@@ -226,6 +226,27 @@ CREATE INDEX IF NOT EXISTS idx_kb_documents_wallet
 
 CREATE INDEX IF NOT EXISTS idx_kb_documents_status
   ON kb_documents (status, created_at DESC);
+
+-- 审计日志（配置变更与私有库操作）
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  operator_wallet_id TEXT,
+  app_id            TEXT,
+  entity_type       TEXT,
+  entity_id         TEXT,
+  action            TEXT NOT NULL,
+  meta_json         TEXT,
+  created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_app
+  ON audit_logs (app_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity
+  ON audit_logs (entity_type, entity_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_operator
+  ON audit_logs (operator_wallet_id, created_at DESC);
 """
 
 

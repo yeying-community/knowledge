@@ -14,6 +14,9 @@ from api.kb_meta import infer_file_type, sha256_text
 from api.routers.kb import _ensure_collection, _resolve_kb_config, _text_field_from_cfg
 from api.schemas.jd import JDUploadRequest, JDUploadResponse
 from api.routers.private_db_utils import resolve_private_db_id
+from api.routers.owner import ensure_can_act_for_data_wallet
+from api.auth.deps import get_optional_auth_wallet_id, resolve_operator_wallet_id
+from api.auth.normalize import normalize_wallet_id
 from datasource.objectstores.path_builder import PathBuilder
 
 
@@ -65,7 +68,12 @@ def _resolve_user_upload_kb(deps, app_id: str, kb_key: Optional[str]) -> tuple[s
 
 
 @router.post("/upload", response_model=JDUploadResponse)
-def upload_jd(app_id: str, req: JDUploadRequest, deps=Depends(get_deps)):
+def upload_jd(
+    app_id: str,
+    req: JDUploadRequest,
+    auth_wallet_id: Optional[str] = Depends(get_optional_auth_wallet_id),
+    deps=Depends(get_deps),
+):
     try:
         effective_app_id = (req.app_id or "").strip() or app_id
         if req.app_id and req.app_id != app_id:
@@ -74,6 +82,19 @@ def upload_jd(app_id: str, req: JDUploadRequest, deps=Depends(get_deps)):
         row = deps.datasource.app_store.get(effective_app_id)
         if not row or row.get("status") != "active":
             raise HTTPException(status_code=400, detail=f"app_id={effective_app_id} not active in DB")
+
+        operator_wallet_id = resolve_operator_wallet_id(
+            request_wallet_id=req.wallet_id,
+            auth_wallet_id=auth_wallet_id,
+            allow_insecure=deps.settings.auth_allow_insecure_wallet_id,
+        )
+        data_wallet_id = normalize_wallet_id(req.data_wallet_id) or operator_wallet_id
+        ensure_can_act_for_data_wallet(
+            deps,
+            app_id=effective_app_id,
+            operator_wallet_id=operator_wallet_id,
+            data_wallet_id=data_wallet_id,
+        )
 
         if not deps.datasource.minio:
             raise RuntimeError("MinIO is not enabled")
@@ -90,7 +111,8 @@ def upload_jd(app_id: str, req: JDUploadRequest, deps=Depends(get_deps)):
         private_db_id = resolve_private_db_id(
             deps,
             app_id=effective_app_id,
-            wallet_id=req.wallet_id,
+            operator_wallet_id=operator_wallet_id,
+            data_wallet_id=data_wallet_id,
             private_db_id=req.private_db_id,
             session_id=req.session_id,
             allow_create=True,
@@ -98,7 +120,7 @@ def upload_jd(app_id: str, req: JDUploadRequest, deps=Depends(get_deps)):
         if not private_db_id:
             raise HTTPException(status_code=400, detail="session_id or private_db_id is required")
 
-        key = PathBuilder.user_jd(req.wallet_id, effective_app_id, jd_id)
+        key = PathBuilder.user_jd(data_wallet_id, effective_app_id, jd_id)
         deps.datasource.minio.put_text(bucket=deps.datasource.bucket, key=key, text=raw_json)
         source_url = f"minio://{deps.datasource.bucket}/{key}"
         file_type = infer_file_type(source_url) or "json"
@@ -106,7 +128,7 @@ def upload_jd(app_id: str, req: JDUploadRequest, deps=Depends(get_deps)):
         text_field = _text_field_from_cfg(cfg)
         props: Dict[str, Any] = {
             text_field: jd_text,
-            "wallet_id": req.wallet_id,
+            "wallet_id": data_wallet_id,
             "private_db_id": private_db_id,
             "jd_id": jd_id,
             "source_url": source_url,
@@ -130,7 +152,7 @@ def upload_jd(app_id: str, req: JDUploadRequest, deps=Depends(get_deps)):
             doc_id=str(doc_id),
             app_id=effective_app_id,
             kb_key=kb_key,
-            wallet_id=req.wallet_id,
+            wallet_id=data_wallet_id,
             private_db_id=private_db_id,
             source_url=source_url,
             source_type="jd",

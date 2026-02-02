@@ -157,7 +157,7 @@ function renderJobs() {
       const badge = statusBadge(job.status);
       const source = job.source_url ? escapeHtml(job.source_url) : "-";
       const operatorId = escapeHtml(job.wallet_id || "-");
-      const dataWallet = job.data_wallet_id ? escapeHtml(job.data_wallet_id) : "共享";
+      const dataWallet = job.data_wallet_id ? escapeHtml(job.data_wallet_id) : "公共";
       const appId = escapeHtml(job.app_id);
       const kbKey = escapeHtml(job.kb_key);
       return `
@@ -262,7 +262,7 @@ function updateDataWalletField() {
   const kbType = getSelectedKbType();
   const isUserUpload = kbType === "user_upload";
   jobDataWallet.disabled = !isUserUpload;
-  jobDataWallet.placeholder = isUserUpload ? "业务用户 wallet_id（可选）" : "共享 KB 无需填写";
+  jobDataWallet.placeholder = isUserUpload ? "业务用户 wallet_id（可选）" : "公共知识库无需填写";
   if (!isUserUpload) {
     jobDataWallet.value = "";
   }
@@ -274,7 +274,7 @@ function renderRecentKeys(preset) {
   const keys = preset?.recent_keys || [];
   if (jobPrefix) {
     const ownerWallet = (jobDataWallet?.value || "").trim() || state.walletId || "";
-    const scopeLabel = kbType === "user_upload" ? `业务用户钱包 ${ownerWallet || "-"}` : "共享 KB";
+    const scopeLabel = kbType === "user_upload" ? `业务用户钱包 ${ownerWallet || "-"}` : "公共知识库";
     jobPrefix.textContent = preset?.prefix ? `${scopeLabel} · 默认路径：${preset.prefix}` : "";
   }
   if (!keys.length) {

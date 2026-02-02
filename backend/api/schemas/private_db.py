@@ -6,14 +6,22 @@ from pydantic import BaseModel, Field
 
 
 class PrivateDBCreateRequest(BaseModel):
-    wallet_id: str = Field(..., description="操作钱包 ID")
+    wallet_id: Optional[str] = Field(None, description="操作钱包 ID（兼容字段；推荐使用 Authorization）")
     app_id: str = Field(..., description="业务插件 ID")
+    data_wallet_id: Optional[str] = Field(
+        None,
+        description="可选：数据归属钱包 ID（业务用户）。默认等于 wallet_id。",
+    )
     private_db_id: Optional[str] = Field(None, description="可选：自定义私有库 ID")
 
 
 class PrivateDBBindRequest(BaseModel):
-    wallet_id: str = Field(..., description="操作钱包 ID")
+    wallet_id: Optional[str] = Field(None, description="操作钱包 ID（兼容字段；推荐使用 Authorization）")
     app_id: str = Field(..., description="业务插件 ID")
+    data_wallet_id: Optional[str] = Field(
+        None,
+        description="可选：数据归属钱包 ID（业务用户）。默认等于 wallet_id。",
+    )
     session_ids: List[str] = Field(..., description="绑定的 session_id 列表")
 
 

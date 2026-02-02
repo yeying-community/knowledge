@@ -22,19 +22,27 @@ from datasource.objectstores.path_builder import PathBuilder
 from identity.identity_manager import IdentityManager
 from identity.models import Identity
 
+from auth_client import login_with_private_key, resolve_test_private_key
+
+DEFAULT_HEADERS: Dict[str, str] = {}
+
 
 def http_json(
     method: str,
     url: str,
     payload: Dict[str, Any] | None = None,
     *,
+    headers: Dict[str, str] | None = None,
     timeout: int = 10,
 ) -> Tuple[int, Any]:
     data = None
-    headers = {"Content-Type": "application/json"}
+    merged = {"Content-Type": "application/json"}
+    merged.update(DEFAULT_HEADERS)
+    if headers:
+        merged.update(headers)
     if payload is not None:
         data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    req = urllib.request.Request(url, data=data, headers=merged, method=method)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             raw = resp.read().decode("utf-8")
@@ -159,6 +167,7 @@ def main() -> int:
     parser.add_argument("--api-base", default="http://127.0.0.1:8000", help="API base URL")
     parser.add_argument("--app-id", default="interviewer", help="App ID")
     parser.add_argument("--wallet-id", default="wallet_demo", help="Wallet ID")
+    parser.add_argument("--private-key", default="", help="Optional EVM private key for SIWE login (or env RAG_TEST_PRIVATE_KEY)")
     parser.add_argument("--session-id", default="session_demo_001", help="Session ID")
     parser.add_argument("--filename", default="history/session_demo.json", help="Session JSON filename in MinIO")
     parser.add_argument("--session-file", default="", help="Optional local session JSON file path")
@@ -173,6 +182,15 @@ def main() -> int:
     session_id = args.session_id
     filename = args.filename
     timeout = args.timeout
+
+    private_key = resolve_test_private_key(args.private_key)
+    if private_key:
+        addr, token = login_with_private_key(api_base, private_key, timeout=timeout)
+        if args.wallet_id and args.wallet_id != "wallet_demo" and args.wallet_id.lower() != addr.lower():
+            print("ERROR: --wallet-id does not match the provided --private-key address", file=sys.stderr)
+            return 2
+        wallet_id = addr
+        DEFAULT_HEADERS.update({"Authorization": f"Bearer {token}"})
 
     session_payload = {
         "messages": [

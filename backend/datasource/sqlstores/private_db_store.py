@@ -12,7 +12,14 @@ Row = Dict[str, Any]
 
 
 class PrivateDBStore:
-    """私有库与会话绑定存储"""
+    """
+    私有库与会话绑定存储
+
+    约定（当前平台语义）：
+    - private_db 的归并维度： (app_id, owner_wallet_id)
+      其中 owner_wallet_id 代表“数据归属钱包（业务用户）”，不是“操作方钱包”。
+    - session_id 是入口： (app_id, owner_wallet_id, session_id) 绑定到该唯一 private_db。
+    """
 
     def __init__(self, conn: SQLiteConnection | None = None) -> None:
         self.conn = conn or SQLiteConnection()
@@ -34,6 +41,17 @@ class PrivateDBStore:
             (pid, app_id, owner_wallet_id, status),
         )
         return pid
+
+    def get_by_owner(self, *, app_id: str, owner_wallet_id: str) -> Optional[Row]:
+        return self.conn.query_one(
+            """
+            SELECT * FROM private_dbs
+             WHERE app_id = ? AND owner_wallet_id = ?
+             ORDER BY created_at DESC
+             LIMIT 1
+            """,
+            (app_id, owner_wallet_id),
+        )
 
     def get(self, private_db_id: str) -> Optional[Row]:
         return self.conn.query_one(
@@ -160,18 +178,33 @@ class PrivateDBStore:
         )
         return int(cur.rowcount or 0)
 
-    def resolve_or_create(self, *, app_id: str, owner_wallet_id: str, session_id: str) -> str:
-        row = self.get_by_session(app_id=app_id, owner_wallet_id=owner_wallet_id, session_id=session_id)
+    def resolve_or_create(
+        self,
+        *,
+        app_id: str,
+        owner_wallet_id: str,
+        session_id: Optional[str] = None,
+    ) -> str:
+        """
+        Backward-compatible entry:
+        - Always resolve/create the stable private_db by (app_id, owner_wallet_id)
+        - If session_id is provided, bind that session to the resolved private_db.
+        """
+        private_db_id = self.resolve_or_create_by_owner(app_id=app_id, owner_wallet_id=owner_wallet_id)
+        if session_id:
+            self.bind_session(
+                private_db_id=private_db_id,
+                app_id=app_id,
+                owner_wallet_id=owner_wallet_id,
+                session_id=session_id,
+            )
+        return private_db_id
+
+    def resolve_or_create_by_owner(self, *, app_id: str, owner_wallet_id: str) -> str:
+        row = self.get_by_owner(app_id=app_id, owner_wallet_id=owner_wallet_id)
         if row and row.get("private_db_id"):
             return str(row["private_db_id"])
-        private_db_id = self.create(app_id=app_id, owner_wallet_id=owner_wallet_id)
-        self.bind_session(
-            private_db_id=private_db_id,
-            app_id=app_id,
-            owner_wallet_id=owner_wallet_id,
-            session_id=session_id,
-        )
-        return private_db_id
+        return self.create(app_id=app_id, owner_wallet_id=owner_wallet_id)
 
     def ensure_owner(self, *, private_db_id: str, app_id: str, owner_wallet_id: str) -> None:
         row = self.get(private_db_id)

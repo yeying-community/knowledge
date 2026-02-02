@@ -223,6 +223,12 @@ textarea {
   min-height: 90px;
 }
 
+.code-editor {
+  min-height: 320px;
+  font-family: var(--mono);
+  background: rgba(255, 255, 255, 0.98);
+}
+
 input[type="text"]:focus-visible,
 input[type="search"]:focus-visible,
 input[type="url"]:focus-visible,
@@ -317,12 +323,30 @@ button:disabled {
   grid-template-columns: 1fr;
 }
 
+.layout.sidebar-collapsed {
+  grid-template-columns: 0 1fr;
+  gap: 0;
+}
+
+.layout.sidebar-collapsed .sidebar {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+  margin: 0;
+  transform: translateX(-12px);
+}
+
+.layout.sidebar-collapsed .sidebar-card {
+  transform: translateX(-16px);
+}
+
 .sidebar {
   position: sticky;
   top: 20px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .sidebar nav {
@@ -341,6 +365,7 @@ button:disabled {
   height: var(--control-height);
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .nav-item.active,
@@ -367,6 +392,16 @@ button:disabled {
   margin: 0 0 12px;
   color: var(--text-2);
   font-size: 13px;
+}
+
+.sidebar-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.sidebar-actions button {
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .pill-row {
@@ -421,6 +456,22 @@ button:disabled {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.hero-steps {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.hero-steps li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .hero-status {
@@ -857,7 +908,62 @@ select {
 }
 
 .private-db-table .table-row {
-  grid-template-columns: 1.4fr 0.9fr 0.7fr 0.9fr 0.6fr;
+  grid-template-columns: 1.6fr 0.8fr 0.5fr;
+  align-items: center;
+}
+
+.plugin-file-table .table-row {
+  grid-template-columns: 1.6fr 0.6fr 0.6fr 0.9fr;
+  align-items: center;
+}
+
+.private-db-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.private-db-id {
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.private-db-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.private-db-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.audit-table .table-row {
+  grid-template-columns: 0.9fr 1fr 1.1fr 1.1fr 1.4fr;
+}
+
+.intent-table .table-row,
+.workflow-table .table-row {
+  grid-template-columns: 1fr 0.6fr 1.2fr 1.6fr 0.6fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.intent-table .table-row.header,
+.workflow-table .table-row.header {
+  background: rgba(235, 240, 255, 0.9);
+}
+
+.intent-table input,
+.intent-table select,
+.workflow-table input,
+.workflow-table select {
+  width: 100%;
 }
 
 .private-db-table .table-row.expanded {
@@ -1384,6 +1490,88 @@ select {
   border: 1px solid rgba(168, 186, 220, 0.35);
   padding: 12px;
   min-height: 90px;
+}
+
+.detail-log.preformatted {
+  white-space: pre-wrap;
+}
+
+.admin-section {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+  background: rgba(248, 250, 255, 0.85);
+}
+
+.admin-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.admin-section-header h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.admin-section-header p {
+  margin: 4px 0 0;
+  color: var(--text-2);
+}
+
+.schema-table .table-row {
+  grid-template-columns: 1.1fr 0.8fr 0.6fr 1.5fr 0.6fr;
+  gap: 8px;
+}
+
+.schema-table .table-row.header {
+  background: rgba(235, 240, 255, 0.9);
+}
+
+.schema-table input,
+.schema-table select {
+  width: 100%;
+}
+
+.vector-fields {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.schema-summary {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.summary-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(47, 107, 255, 0.12);
+  color: var(--text-1);
+  font-size: 12px;
+  border: 1px solid rgba(47, 107, 255, 0.25);
+  font-family: var(--mono);
 }
 
 .validation-output {

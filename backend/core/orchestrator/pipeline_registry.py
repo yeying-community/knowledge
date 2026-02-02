@@ -6,7 +6,8 @@ from __future__ import annotations
 import importlib.util
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Type, List
+import yaml
 
 from .app_registry import AppRegistry, AppSpec
 
@@ -111,6 +112,37 @@ class PipelineRegistry:
 
 class _DefaultPassThroughPipeline(BasePipeline):
     def run(self, *, identity, intent: str, user_query: str, intent_params: Dict[str, Any]) -> Dict[str, Any]:
+        workflow = self._resolve_workflow(identity.app_id, intent)
+        if workflow:
+            steps = []
+            last_result = None
+            intents = workflow.get("intents") or []
+            if len(intents) > 20:
+                raise RuntimeError("workflow intents exceed max length (20)")
+            for step_intent in intents:
+                if not step_intent:
+                    continue
+                if str(step_intent).strip() == str(intent).strip():
+                    continue
+                try:
+                    res = self.orchestrator.run_with_identity(
+                        identity=identity,
+                        intent=str(step_intent),
+                        user_query=user_query,
+                        intent_params=intent_params or {},
+                    )
+                except Exception as exc:
+                    steps.append({"intent": str(step_intent), "error": str(exc)})
+                    last_result = {"error": str(exc)}
+                    break
+                steps.append({"intent": str(step_intent), "result": res})
+                last_result = res
+            return {
+                "workflow": workflow.get("name") or intent,
+                "steps": steps,
+                "final": last_result,
+            }
+
         return self.orchestrator.run(
             wallet_id=identity.wallet_id,
             app_id=identity.app_id,
@@ -119,3 +151,33 @@ class _DefaultPassThroughPipeline(BasePipeline):
             user_query=user_query,
             intent_params=intent_params or {},
         )
+
+    def _resolve_workflow(self, app_id: str, intent: str) -> Optional[Dict[str, Any]]:
+        try:
+            app_spec = self.orchestrator.app_registry.get(app_id)
+            path = app_spec.plugin_dir / "workflows.yaml"
+            if not path.exists():
+                return None
+            raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            workflows: List[Dict[str, Any]] = []
+            if isinstance(raw, dict):
+                items = raw.get("workflows") or []
+                if isinstance(items, list):
+                    workflows = items
+            elif isinstance(raw, list):
+                workflows = raw
+            for item in workflows:
+                if not isinstance(item, dict):
+                    continue
+                name = str(item.get("name") or "").strip()
+                if not name or name != str(intent).strip():
+                    continue
+                if item.get("enabled", True) is False:
+                    return None
+                intents = item.get("intents") or []
+                if not isinstance(intents, list):
+                    intents = []
+                return {"name": name, "intents": [str(x) for x in intents if str(x).strip()]}
+        except Exception:
+            return None
+        return None

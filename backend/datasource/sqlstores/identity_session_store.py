@@ -110,3 +110,20 @@ class IdentitySessionStore:
             tuple(params),
         )
         return int(row["total"] if row else 0)
+
+    def delete_by_memory_key(self, memory_key: str) -> int:
+        cur = self.conn.execute(
+            "DELETE FROM identity_session WHERE memory_key = ?",
+            (memory_key,),
+        )
+        return int(cur.rowcount or 0)
+
+    def delete_by_triplet(self, wallet_id: str, app_id: str, session_id: str) -> int:
+        cur = self.conn.execute(
+            """
+            DELETE FROM identity_session
+             WHERE wallet_id = ? AND app_id = ? AND session_id = ?
+            """,
+            (wallet_id, app_id, session_id),
+        )
+        return int(cur.rowcount or 0)
