@@ -1,18 +1,88 @@
 from __future__ import annotations
 
-from functools import lru_cache
-from pathlib import Path
 import base64
 import hashlib
+import os
+import tomllib
+from functools import lru_cache
+from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict, SettingsError
+
+
+DEFAULT_JWT_SECRET = "change-me-in-production"
+# Known placeholder secrets shipped in defaults and .env.template. None of these
+# may be used once the service runs outside a development environment.
+INSECURE_JWT_SECRETS = frozenset(
+    {DEFAULT_JWT_SECRET, "", "change-me", "replace-with-a-random-secret"}
+)
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+class ProductionConfigError(RuntimeError):
+    """Raised when a non-development runtime still carries insecure defaults."""
+
+
+def config_dir() -> Path:
+    """Directory holding config/defaults.toml and config/local.toml.
+
+    ``KNOWLEDGE_CONFIG_DIR`` overrides the default ``<repo>/config`` so packaged
+    or containerised deployments can mount the files anywhere.
+    """
+    override = os.environ.get("KNOWLEDGE_CONFIG_DIR")
+    return Path(override) if override else _PROJECT_ROOT / "config"
+
+
+class TomlSettingsSource(PydanticBaseSettingsSource):
+    """Settings source backed by one TOML file.
+
+    The file is organised in tables (``[application]``, ``[warehouse]`` ...)
+    purely for readability; every leaf key must be a ``Settings`` field name and
+    the tables are flattened. Only keys present in the file are contributed, so
+    pydantic-settings' usual precedence applies to everything else. A missing
+    file is fine; a malformed file or an unknown key fails startup with a
+    message naming the file, so typos never silently fall back to defaults.
+    """
+
+    def __init__(self, settings_cls: type[BaseSettings], file_path: Path) -> None:
+        super().__init__(settings_cls)
+        self.file_path = file_path
+
+    def get_field_value(self, field: Any, field_name: str) -> tuple[Any, str, bool]:
+        return self._read().get(field_name), field_name, False
+
+    def __call__(self) -> dict[str, Any]:
+        return dict(self._read())
+
+    def _read(self) -> dict[str, Any]:
+        if not self.file_path.is_file():
+            return {}
+        try:
+            with self.file_path.open("rb") as handle:
+                parsed = tomllib.load(handle)
+        except tomllib.TOMLDecodeError as exc:
+            raise SettingsError(f"invalid TOML in {self.file_path}: {exc}") from exc
+        flat: dict[str, Any] = {}
+        for key, value in parsed.items():
+            if isinstance(value, dict):
+                flat.update(value)
+            else:
+                flat[key] = value
+        unknown = sorted(key for key in flat if key not in self.settings_cls.model_fields)
+        if unknown:
+            raise SettingsError(f"unknown settings in {self.file_path}: {', '.join(unknown)}")
+        return flat
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        # KNOWLEDGE_ENV_FILE lets tests and deployments point at another file
+        # (or a nonexistent path to disable .env entirely).
+        env_file=os.environ.get("KNOWLEDGE_ENV_FILE", ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
         protected_namespaces=(),
@@ -26,32 +96,37 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql://knowledge:knowledge@127.0.0.1:5432/knowledge?gssencmode=disable"
 
-    jwt_secret: str = "change-me-in-production"
+    jwt_secret: str = DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     refresh_token_expire_minutes: int = 60 * 24 * 7
     challenge_ttl_seconds: int = 300
-    siwe_domain: str = ""
-    siwe_uri: str = ""
-    siwe_chain_id: int = 1
-    passport_node_url: str = ""
-    passport_app_id: str = ""
-    passport_redirect_uri: str = ""
+    identity_node_url: str = ""
+    identity_app_id: str = ""
+    identity_redirect_uri: str = ""
     passport_session_ttl_seconds: int = 300
 
-    warehouse_gateway_mode: str = "s3"
+    # Deprecated compatibility switch. Production uses the standard object
+    # storage gateway below; keep this only for legacy tests/transitional setups.
+    warehouse_gateway_mode: str = ""
     warehouse_base_url: str = "https://webdav.yeying.pub"
     warehouse_webdav_prefix: str = "/dav"
-    s3_endpoint_url: str = "http://127.0.0.1:6066"
-    s3_region: str = "us-east-1"
+    object_storage_endpoint: str = "http://127.0.0.1:6066"
+    object_storage_region: str = "us-east-1"
+    # Backward-compatible aliases for existing deployments.
+    s3_endpoint_url: str = ""
+    s3_region: str = ""
     warehouse_app_id: str = "knowledge.yeying.pub"
     warehouse_apps_prefix: str = "/apps"
-    warehouse_mock_root: str = str(Path(__file__).resolve().parents[2] / ".mock_warehouse")
+    warehouse_mock_root: str = str(_PROJECT_ROOT / ".mock_warehouse")
     token_encryption_secret: str = ""
 
     vector_store_mode: str = "db"
     weaviate_url: str = "http://127.0.0.1:8080"
     weaviate_index_name: str = "KnowledgeChunk"
+    # Unit-level vectors (evidence/formal) live in their own class so they never
+    # collide with chunk vectors; Postgres unit_embeddings stays the source of truth.
+    weaviate_unit_index_name: str = "KnowledgeUnit"
     weaviate_scheme: str = "http"
     weaviate_host: str = ""
     weaviate_port: int = 8080
@@ -65,6 +140,11 @@ class Settings(BaseSettings):
     analysis_planner_timeout_seconds: int = 30
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 32
+    # Cost/stability policy for real embedding calls: bounded latency and a small
+    # retry budget (exponential backoff inside the client). Query-time failures
+    # still degrade to lexical retrieval; these keep that path from hanging.
+    embedding_timeout_seconds: int = 30
+    embedding_max_retries: int = 2
 
     document_parser_mode: str = "local"
     ragflow_parser_chunk_token_num: int = 512
@@ -72,13 +152,31 @@ class Settings(BaseSettings):
     document_chunker_mode: str = "local"
     ragflow_chunker_delimiter: str = "\n。；！？"
     source_connector_mode: str = "warehouse"
-    local_file_connector_root: str = str(Path(__file__).resolve().parents[2] / ".local_source_files")
+    local_file_connector_root: str = str(_PROJECT_ROOT / ".local_source_files")
     github_connector_access_token: str = ""
     github_connector_api_base_url: str = "https://api.github.com"
 
     chunk_size: int = 800
     chunk_overlap: int = 120
     retrieval_top_k: int = 6
+    # Hybrid retrieval: fuse lexical (token-overlap) and semantic (embedding cosine)
+    # signals via Reciprocal Rank Fusion. Effective only with a real embedding
+    # provider; the mock provider is skipped so lexical ranking stays deterministic.
+    retrieval_hybrid_enabled: bool = True
+    retrieval_rrf_k: int = 60
+    # Number of unit-level vector candidates recalled (before fusion) to widen the
+    # lexical recall set with semantically-relevant units it missed.
+    retrieval_vector_top_k: int = 20
+    # Rerank: after RRF, re-score the top candidates with a cross-encoder rerank
+    # service for precision. Default on; effective only with a real provider, and
+    # any failure/timeout degrades to the RRF order. rerank_top_m bounds how many
+    # fused candidates are sent to the reranker.
+    retrieval_rerank_enabled: bool = True
+    rerank_model: str = "rerank-english-v3.0"
+    rerank_top_m: int = 20
+    rerank_timeout_seconds: int = 10
+    # Retries only transport errors and 5xx; 4xx is a configuration problem.
+    rerank_max_retries: int = 1
     memory_top_k: int = 4
     auto_memory_short_term_ttl_hours: int = 72
     auto_memory_max_long_terms: int = 3
@@ -98,10 +196,41 @@ class Settings(BaseSettings):
             raise ValueError("DATABASE_URL must use the postgresql:// scheme")
         return value
 
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        """Precedence, highest first: init kwargs > process env > .env > secrets dir
+        > config/local.toml > config/defaults.toml > field default.
+
+        pydantic-settings resolves each field from the first source in this tuple
+        that provides it, so the config files sit after the environment sources
+        and a single exported variable always overrides what the files declare.
+        """
+        directory = config_dir()
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+            TomlSettingsSource(settings_cls, directory / "local.toml"),
+            TomlSettingsSource(settings_cls, directory / "defaults.toml"),
+        )
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     settings = Settings()
+    token_secret_explicit = bool(settings.token_encryption_secret)
+    if settings.s3_endpoint_url:
+        settings.object_storage_endpoint = settings.s3_endpoint_url
+    if settings.s3_region:
+        settings.object_storage_region = settings.s3_region
     if not settings.token_encryption_secret:
         digest = hashlib.sha256(settings.jwt_secret.encode("utf-8")).digest()
         settings.token_encryption_secret = base64.urlsafe_b64encode(digest).decode("utf-8")
@@ -113,4 +242,37 @@ def get_settings() -> Settings:
         settings.weaviate_host = parsed.hostname
         if parsed.port:
             settings.weaviate_port = parsed.port
+    validate_runtime_settings(settings, token_secret_explicit=token_secret_explicit)
     return settings
+
+
+def validate_runtime_settings(settings: Settings, *, token_secret_explicit: bool) -> None:
+    """Fail fast when a non-development runtime still uses insecure defaults.
+
+    Development is intentionally exempt so local runs and tests keep working with
+    mock providers and placeholder secrets. Every other environment must supply
+    real, rotatable secrets and real providers before the process starts.
+    """
+    if settings.app_env == "development":
+        return
+
+    problems: list[str] = []
+    if settings.jwt_secret in INSECURE_JWT_SECRETS:
+        problems.append("JWT_SECRET must be a long random value, not a default/placeholder")
+    if settings.debug:
+        problems.append("DEBUG must be false")
+    if settings.model_provider_mode == "mock":
+        problems.append("MODEL_PROVIDER_MODE must not be 'mock'; connect a real model gateway")
+    if settings.warehouse_gateway_mode == "mock":
+        problems.append("WAREHOUSE_GATEWAY_MODE must not be 'mock'; use real object storage")
+    if not token_secret_explicit:
+        problems.append(
+            "TOKEN_ENCRYPTION_SECRET must be set explicitly; "
+            "deriving it from JWT_SECRET is not allowed outside development"
+        )
+
+    if problems:
+        joined = "\n  - ".join(problems)
+        raise ProductionConfigError(
+            f"Insecure configuration for app_env='{settings.app_env}':\n  - {joined}"
+        )

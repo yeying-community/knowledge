@@ -307,17 +307,13 @@ def _ensure_demo_content(db: Session) -> None:
 
 @router.post("/challenge", response_model=ChallengeResponse)
 def create_challenge(payload: ChallengeRequest, request: Request, db: Session = Depends(get_db)) -> ChallengeResponse:
-    configured_domain = service.settings.siwe_domain.strip()
-    configured_uri = service.settings.siwe_uri.strip()
-    if service.settings.app_env != "development" and (not configured_domain or not configured_uri):
-        raise HTTPException(status_code=503, detail="SIWE_DOMAIN and SIWE_URI must be configured outside development")
     request_origin = f"{request.url.scheme}://{request.url.netloc}"
     try:
         challenge = service.create_challenge(
             db,
             payload.wallet_address,
-            domain=configured_domain or request.url.netloc,
-            uri=configured_uri or request_origin,
+            domain=request.url.netloc,
+            uri=request_origin,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -354,6 +350,22 @@ def create_passport_session(db: Session = Depends(get_db)) -> PassportSessionRes
     except ValueError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     return PassportSessionResponse(session_id=session.id, verify_url=session.verify_url, status=session.status, expires_at=session.expires_at)
+
+@router.post("/identity/login/session")
+def create_identity_login_session(db: Session = Depends(get_db)) -> dict:
+    try:
+        return passport_service.create_identity_session(db)
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+@router.post("/identity/login/verify", response_model=TokenResponse)
+def verify_identity_login(payload: dict, db: Session = Depends(get_db)) -> TokenResponse:
+    try:
+        address = passport_service.verify_identity(db, str(payload.get("session_id") or ""), payload.get("presentation") or {})
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    access, refresh = service.create_token_pair(address)
+    return TokenResponse(access_token=access[0], token=access[0], refresh_token=refresh[0], wallet_address=address, expires_at=access[1], refresh_expires_at=refresh[1])
 
 
 @router.get("/passport/callback", response_class=HTMLResponse)

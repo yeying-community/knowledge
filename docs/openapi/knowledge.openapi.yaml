@@ -66,6 +66,119 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /auth/passport/sessions:
+    post:
+      tags:
+      - auth
+      summary: Create Passport Session
+      operationId: create_passport_session_auth_passport_sessions_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassportSessionResponse'
+  /auth/identity/login/session:
+    post:
+      tags:
+      - auth
+      summary: Create Identity Login Session
+      operationId: create_identity_login_session_auth_identity_login_session_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                title: Response Create Identity Login Session Auth Identity Login Session Post
+  /auth/identity/login/verify:
+    post:
+      tags:
+      - auth
+      summary: Verify Identity Login
+      operationId: verify_identity_login_auth_identity_login_verify_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              title: Payload
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/passport/callback:
+    get:
+      tags:
+      - auth
+      summary: Passport Callback
+      operationId: passport_callback_auth_passport_callback_get
+      parameters:
+      - name: code
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          title: Code
+      - name: state
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          title: State
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/html:
+              schema:
+                type: string
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/passport/sessions/{session_id}:
+    get:
+      tags:
+      - auth
+      summary: Get Passport Session
+      operationId: get_passport_session_auth_passport_sessions__session_id__get
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Session Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassportStatusResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /auth/demo:
     post:
       tags:
@@ -692,6 +805,14 @@ paths:
           type: integer
           default: 0
           title: After
+      - name: Last-Event-ID
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last-Event-Id
       - name: X-Service-Api-Key
         in: header
         required: true
@@ -992,6 +1113,214 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AgentRunRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /analysis-runs:
+    get:
+      tags:
+      - analysis_runs
+      summary: List My Analysis Runs
+      operationId: list_my_analysis_runs_analysis_runs_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/AgentRunRead'
+                type: array
+                title: Response List My Analysis Runs Analysis Runs Get
+      security:
+      - HTTPBearer: []
+    post:
+      tags:
+      - analysis_runs
+      summary: Create My Analysis Run
+      operationId: create_my_analysis_run_analysis_runs_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisRunCreateRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRunRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /analysis-runs/{run_id}:
+    get:
+      tags:
+      - analysis_runs
+      summary: Get My Analysis Run
+      operationId: get_my_analysis_run_analysis_runs__run_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRunRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /analysis-runs/{run_id}/events:
+    get:
+      tags:
+      - analysis_runs
+      summary: List My Analysis Events
+      operationId: list_my_analysis_events_analysis_runs__run_id__events_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: After
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentRunEventRead'
+                title: Response List My Analysis Events Analysis Runs  Run Id  Events Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /analysis-runs/{run_id}/events/stream:
+    get:
+      tags:
+      - analysis_runs
+      summary: Stream My Analysis Events
+      operationId: stream_my_analysis_events_analysis_runs__run_id__events_stream_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: After
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /analysis-runs/{run_id}/artifacts:
+    get:
+      tags:
+      - analysis_runs
+      summary: List My Analysis Artifacts
+      operationId: list_my_analysis_artifacts_analysis_runs__run_id__artifacts_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentRunArtifactRead'
+                title: Response List My Analysis Artifacts Analysis Runs  Run Id  Artifacts Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /analysis-runs/{run_id}/artifacts/{artifact_id}/download:
+    get:
+      tags:
+      - analysis_runs
+      summary: Download My Analysis Artifact
+      operationId: download_my_analysis_artifact_analysis_runs__run_id__artifacts__artifact_id__download_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      - name: artifact_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Artifact Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
         '422':
           description: Validation Error
           content:
@@ -1311,7 +1640,7 @@ paths:
             application/json:
               schema:
                 items:
-                  type: object
+                  $ref: '#/components/schemas/UploadRecordRead'
                 type: array
                 title: Response List Upload Records Warehouse Uploads Get
       security:
@@ -1352,8 +1681,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                title: Response Preview Warehouse File Warehouse Preview Get
+                $ref: '#/components/schemas/WarehousePreviewResponse'
         '422':
           description: Validation Error
           content:
@@ -1843,7 +2171,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
+                  $ref: '#/components/schemas/TaskItemRead'
                 title: Response Task Items Tasks  Task Id  Items Get
         '422':
           description: Validation Error
@@ -1874,7 +2202,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
+                  $ref: '#/components/schemas/DocumentRead'
                 title: Response List Documents Kbs  Kb Id  Documents Get
         '422':
           description: Validation Error
@@ -1909,8 +2237,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                title: Response Get Document Kbs  Kb Id  Documents  Doc Id  Get
+                $ref: '#/components/schemas/DocumentDetailRead'
         '422':
           description: Validation Error
           content:
@@ -1943,8 +2270,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                title: Response Delete Document Kbs  Kb Id  Documents  Doc Id  Delete
+                $ref: '#/components/schemas/OkResponse'
         '422':
           description: Validation Error
           content:
@@ -2013,6 +2339,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EvidenceBuildResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/reindex-units:
+    post:
+      tags:
+      - evidence
+      summary: Reindex Units
+      description: '(Re)embed the KB''s evidence units so hybrid retrieval can widen recall.
+
+
+        Idempotent: only units whose text changed since the last run are re-embedded.
+
+        A no-op under the mock provider, where hybrid retrieval stays lexical-only.'
+      operationId: reindex_units_kbs__kb_id__reindex_units_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitReindexResponse'
         '422':
           description: Validation Error
           content:
@@ -2318,7 +2678,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/KnowledgeItemRead'
+                  $ref: '#/components/schemas/KnowledgeItemListRead'
                 title: Response List Items Kbs  Kb Id  Items Get
         '422':
           description: Validation Error
@@ -3451,8 +3811,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                title: Response Overview Ops Overview Get
+                $ref: '#/components/schemas/OpsOverviewResponse'
       security:
       - HTTPBearer: []
   /ops/stores/health:
@@ -3467,8 +3826,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                title: Response Stores Health Ops Stores Health Get
+                $ref: '#/components/schemas/StoresHealthResponse'
       security:
       - HTTPBearer: []
   /ops/workers:
@@ -3484,7 +3842,7 @@ paths:
             application/json:
               schema:
                 items:
-                  type: object
+                  $ref: '#/components/schemas/WorkerStatusRead'
                 type: array
                 title: Response Workers Ops Workers Get
       security:
@@ -3521,7 +3879,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
+                  $ref: '#/components/schemas/TaskFailureRead'
                 title: Response Recent Task Failures Ops Tasks Failures Get
         '422':
           description: Validation Error
@@ -3861,6 +4219,25 @@ components:
       - error_summary
       - started_at
       title: AgentRunStepRead
+    AnalysisRunCreateRequest:
+      properties:
+        warehouse_path:
+          type: string
+          maxLength: 1024
+          minLength: 1
+          title: Warehouse Path
+        intent:
+          type: string
+          maxLength: 4000
+          minLength: 1
+          title: Intent
+        constraints:
+          $ref: '#/components/schemas/SpreadsheetAnalysisConstraints'
+      type: object
+      required:
+      - warehouse_path
+      - intent
+      title: AnalysisRunCreateRequest
     BindingTaskCreateRequest:
       properties:
         binding_ids:
@@ -4033,6 +4410,9 @@ components:
         message:
           type: string
           title: Message
+        challenge:
+          type: string
+          title: Challenge
         expires_at:
           type: string
           format: date-time
@@ -4042,8 +4422,144 @@ components:
       - wallet_address
       - nonce
       - message
+      - challenge
       - expires_at
       title: ChallengeResponse
+    DocumentChunkRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        chunk_index:
+          type: integer
+          title: Chunk Index
+        text:
+          type: string
+          title: Text
+        metadata:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Metadata
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        embedding_model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Embedding Model
+        index_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Index Status
+      type: object
+      required:
+      - id
+      - chunk_index
+      - text
+      - created_at
+      title: DocumentChunkRead
+    DocumentDetailRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        source_path:
+          type: string
+          title: Source Path
+        source_file_name:
+          type: string
+          title: Source File Name
+        file_type:
+          type: string
+          title: File Type
+        source_kind:
+          type: string
+          title: Source Kind
+        parse_status:
+          type: string
+          title: Parse Status
+        chunk_count:
+          type: integer
+          title: Chunk Count
+          default: 0
+        last_indexed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Indexed At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        source_etag_or_mtime:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Etag Or Mtime
+        chunks:
+          items:
+            $ref: '#/components/schemas/DocumentChunkRead'
+          type: array
+          title: Chunks
+      type: object
+      required:
+      - id
+      - source_path
+      - source_file_name
+      - file_type
+      - source_kind
+      - parse_status
+      - created_at
+      - updated_at
+      title: DocumentDetailRead
+    DocumentRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        source_path:
+          type: string
+          title: Source Path
+        source_file_name:
+          type: string
+          title: Source File Name
+        file_type:
+          type: string
+          title: File Type
+        source_kind:
+          type: string
+          title: Source Kind
+        parse_status:
+          type: string
+          title: Parse Status
+        chunk_count:
+          type: integer
+          title: Chunk Count
+          default: 0
+        last_indexed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Indexed At
+      type: object
+      required:
+      - id
+      - source_path
+      - source_file_name
+      - file_type
+      - source_kind
+      - parse_status
+      title: DocumentRead
     EvidenceBuildResponse:
       properties:
         kb_id:
@@ -4550,6 +5066,82 @@ components:
       - rank
       - summary
       title: KnowledgeItemEvidenceLinkRead
+    KnowledgeItemListRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        kb_id:
+          type: integer
+          title: Kb Id
+        item_type:
+          type: string
+          title: Item Type
+        origin_type:
+          type: string
+          title: Origin Type
+        lifecycle_status:
+          type: string
+          title: Lifecycle Status
+        current_revision_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Current Revision Id
+        is_hotfix:
+          type: boolean
+          title: Is Hotfix
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+        statement:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Statement
+        revision_no:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Revision No
+        review_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Review Status
+        visibility_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Visibility Status
+        evidence_count:
+          type: integer
+          title: Evidence Count
+          default: 0
+      type: object
+      required:
+      - id
+      - kb_id
+      - item_type
+      - origin_type
+      - lifecycle_status
+      - is_hotfix
+      - created_at
+      - updated_at
+      title: KnowledgeItemListRead
+      description: 'List row: the item plus a summary of its current revision, so the console
+
+        can render titles without one detail request per item.'
     KnowledgeItemRead:
       properties:
         id:
@@ -5050,6 +5642,117 @@ components:
       - skipped_long_term
       - event
       title: MemoryIngestionResponse
+    OkResponse:
+      properties:
+        ok:
+          type: boolean
+          title: Ok
+          default: true
+      type: object
+      title: OkResponse
+    OpsOverviewResponse:
+      properties:
+        knowledge_bases:
+          type: integer
+          title: Knowledge Bases
+          default: 0
+        documents:
+          type: integer
+          title: Documents
+          default: 0
+        chunks:
+          type: integer
+          title: Chunks
+          default: 0
+        tasks_total:
+          type: integer
+          title: Tasks Total
+          default: 0
+        tasks_pending:
+          type: integer
+          title: Tasks Pending
+          default: 0
+        tasks_running:
+          type: integer
+          title: Tasks Running
+          default: 0
+        tasks_claimed_stale:
+          type: integer
+          title: Tasks Claimed Stale
+          default: 0
+        avg_task_wait_ms:
+          type: integer
+          title: Avg Task Wait Ms
+          default: 0
+        avg_task_run_ms:
+          type: integer
+          title: Avg Task Run Ms
+          default: 0
+        long_term_memories:
+          type: integer
+          title: Long Term Memories
+          default: 0
+        short_term_memories:
+          type: integer
+          title: Short Term Memories
+          default: 0
+        memory_ingestions:
+          type: integer
+          title: Memory Ingestions
+          default: 0
+        retrieval_logs:
+          type: integer
+          title: Retrieval Logs
+          default: 0
+        source_assets_missing:
+          type: integer
+          title: Source Assets Missing
+          default: 0
+        source_assets_stale:
+          type: integer
+          title: Source Assets Stale
+          default: 0
+        uploads:
+          type: integer
+          title: Uploads
+          default: 0
+      type: object
+      title: OpsOverviewResponse
+    PassportSessionResponse:
+      properties:
+        session_id:
+          type: string
+          title: Session Id
+        verify_url:
+          type: string
+          title: Verify Url
+        status:
+          type: string
+          title: Status
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+      type: object
+      required:
+      - session_id
+      - verify_url
+      - status
+      - expires_at
+      title: PassportSessionResponse
+    PassportStatusResponse:
+      properties:
+        status:
+          type: string
+          title: Status
+        token:
+          anyOf:
+          - $ref: '#/components/schemas/TokenResponse'
+          - type: 'null'
+      type: object
+      required:
+      - status
+      title: PassportStatusResponse
     RefreshRequest:
       properties:
         refresh_token:
@@ -6381,6 +7084,46 @@ components:
       required:
       - column
       title: SpreadsheetSortRequest
+    StoresHealthResponse:
+      properties:
+        database:
+          type: string
+          title: Database
+        vector_store_mode:
+          type: string
+          title: Vector Store Mode
+        vector_store_status:
+          type: object
+          title: Vector Store Status
+        model_provider_mode:
+          type: string
+          title: Model Provider Mode
+        model_provider_status:
+          type: string
+          title: Model Provider Status
+        object_storage_endpoint:
+          type: string
+          title: Object Storage Endpoint
+        object_storage_region:
+          type: string
+          title: Object Storage Region
+        warehouse_gateway_mode:
+          type: string
+          title: Warehouse Gateway Mode
+          default: ''
+        warehouse_base_url:
+          type: string
+          title: Warehouse Base Url
+          default: ''
+      type: object
+      required:
+      - database
+      - vector_store_mode
+      - model_provider_mode
+      - model_provider_status
+      - object_storage_endpoint
+      - object_storage_region
+      title: StoresHealthResponse
     TaskCreateRequest:
       properties:
         source_paths:
@@ -6397,6 +7140,112 @@ components:
       required:
       - source_paths
       title: TaskCreateRequest
+    TaskFailureRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        kb_id:
+          type: integer
+          title: Kb Id
+        task_type:
+          type: string
+          title: Task Type
+        status:
+          type: string
+          title: Status
+        trace_id:
+          type: string
+          title: Trace Id
+          default: ''
+        source_paths:
+          items:
+            type: string
+          type: array
+          title: Source Paths
+        error_message:
+          type: string
+          title: Error Message
+          default: ''
+        stats_json:
+          type: object
+          title: Stats Json
+        finished_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Finished At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - kb_id
+      - task_type
+      - status
+      - created_at
+      title: TaskFailureRead
+    TaskItemRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        source_path:
+          type: string
+          title: Source Path
+        file_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: File Name
+        status:
+          type: string
+          title: Status
+        message:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Message
+        processed_chunks:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Processed Chunks
+          default: 0
+        source_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Version
+        stage:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Stage
+        duration_ms:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Duration Ms
+        error_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error Type
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - source_path
+      - status
+      - created_at
+      title: TaskItemRead
     TaskResponse:
       properties:
         id:
@@ -6508,6 +7357,9 @@ components:
         access_token:
           type: string
           title: Access Token
+        token:
+          type: string
+          title: Token
         refresh_token:
           type: string
           title: Refresh Token
@@ -6529,11 +7381,68 @@ components:
       type: object
       required:
       - access_token
+      - token
       - refresh_token
       - wallet_address
       - expires_at
       - refresh_expires_at
       title: TokenResponse
+    UnitReindexResponse:
+      properties:
+        kb_id:
+          type: integer
+          title: Kb Id
+        kind:
+          type: string
+          title: Kind
+        indexed:
+          type: integer
+          title: Indexed
+          default: 0
+        skipped:
+          type: integer
+          title: Skipped
+          default: 0
+        weaviate:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Weaviate
+      type: object
+      required:
+      - kb_id
+      - kind
+      title: UnitReindexResponse
+    UploadRecordRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        warehouse_target_path:
+          type: string
+          title: Warehouse Target Path
+        file_name:
+          type: string
+          title: File Name
+        size:
+          type: integer
+          title: Size
+          default: 0
+        status:
+          type: string
+          title: Status
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - warehouse_target_path
+      - file_name
+      - status
+      - created_at
+      title: UploadRecordRead
     UploadResponse:
       properties:
         warehouse_path:
@@ -6832,6 +7741,45 @@ components:
       - name
       - entry_type
       title: WarehouseEntry
+    WarehousePreviewResponse:
+      properties:
+        path:
+          type: string
+          title: Path
+        file_name:
+          type: string
+          title: File Name
+        file_type:
+          type: string
+          title: File Type
+        size:
+          type: integer
+          title: Size
+          default: 0
+        modified_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Modified At
+        credential_id:
+          type: integer
+          title: Credential Id
+        credential_kind:
+          type: string
+          title: Credential Kind
+        preview:
+          type: string
+          title: Preview
+          default: ''
+      type: object
+      required:
+      - path
+      - file_name
+      - file_type
+      - credential_id
+      - credential_kind
+      title: WarehousePreviewResponse
     WarehouseStatusResponse:
       properties:
         wallet_address:
@@ -6897,6 +7845,43 @@ components:
       required:
       - configured
       title: WarehouseWriteCredentialResponse
+    WorkerStatusRead:
+      properties:
+        worker_name:
+          type: string
+          title: Worker Name
+        status:
+          type: string
+          title: Status
+        last_seen_at:
+          type: string
+          format: date-time
+          title: Last Seen At
+        last_processed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Processed At
+        processed_count:
+          type: integer
+          title: Processed Count
+          default: 0
+        last_error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Error
+        active_tasks_count:
+          type: integer
+          title: Active Tasks Count
+          default: 0
+      type: object
+      required:
+      - worker_name
+      - status
+      - last_seen_at
+      title: WorkerStatusRead
   securitySchemes:
     HTTPBearer:
       type: http

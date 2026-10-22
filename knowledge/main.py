@@ -10,7 +10,7 @@ from knowledge.api.routes_auth import router as auth_router
 from knowledge.api.routes_assets import router as assets_router
 from knowledge.api.routes_agent_runs import router as agent_runs_router
 from knowledge.api.routes_analysis_runs import router as analysis_runs_router
-from knowledge.api.routes_console import router as console_router
+from knowledge.api.routes_console import router as console_router, spa_router
 from knowledge.api.routes_documents import router as documents_router
 from knowledge.api.routes_evidence import router as evidence_router
 from knowledge.api.routes_grants import router as grants_router
@@ -25,10 +25,9 @@ from knowledge.api.routes_sources import router as sources_router
 from knowledge.api.routes_tasks import router as tasks_router
 from knowledge.api.routes_warehouse import router as warehouse_router
 from knowledge.core.settings import get_settings
-from knowledge.db.base import Base
-from knowledge.db.schema import ensure_runtime_schema
-from knowledge.db.session import engine
+from knowledge.db.migrations import ensure_database_schema
 from knowledge.services.vector_store import close_vector_store
+from knowledge.services.unit_retrieval import close_unit_vector_index
 
 
 settings = get_settings()
@@ -36,16 +35,14 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    Base.metadata.create_all(bind=engine)
-    ensure_runtime_schema(engine)
+    ensure_database_schema()
     yield
     close_vector_store()
+    close_unit_vector_index()
 
 
 app = FastAPI(title=settings.app_name, debug=settings.debug, lifespan=lifespan)
 
-static_dir = Path(__file__).resolve().parent / "static"
-app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 web_dist_dir = Path(__file__).resolve().parents[1] / "web" / "dist"
 if web_dist_dir.is_dir():
     app.mount("/assets", StaticFiles(directory=str(web_dist_dir / "assets")), name="web-assets")
@@ -74,3 +71,5 @@ app.include_router(service_search_router)
 app.include_router(search_lab_router)
 app.include_router(memory_router)
 app.include_router(ops_router)
+# SPA catch-all must come after every API router (see routes_console.spa_fallback).
+app.include_router(spa_router)
