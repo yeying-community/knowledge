@@ -66,7 +66,7 @@ class PassportLoginSession(Base):
     request_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     code_verifier: Mapped[str] = mapped_column(String(255), nullable=False)
     redirect_uri: Mapped[str] = mapped_column(String(1024), nullable=False)
-    state: Mapped[str | None] = mapped_column(String(128), unique=True, nullable=True)
+    state: Mapped[str | None] = mapped_column(String(128), unique=True, index=True, nullable=True)
     audience: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     nonce: Mapped[str | None] = mapped_column(String(255), nullable=True)
     scopes: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
@@ -91,6 +91,9 @@ class PassportSubject(Base):
 
 class KnowledgeBase(Base):
     __tablename__ = "knowledge_bases"
+    __table_args__ = (
+        UniqueConstraint("id", "owner_wallet_address", name="uq_knowledge_bases_id_owner_wallet"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     owner_wallet_address: Mapped[str] = mapped_column(ForeignKey("wallet_users.wallet_address"), index=True, nullable=False)
@@ -618,6 +621,7 @@ class AgentRun(Base):
     __tablename__ = "agent_runs"
     __table_args__ = (
         UniqueConstraint("service_principal_id", "external_id", name="uq_agent_runs_principal_external_id"),
+        UniqueConstraint("retry_of_run_id", name="uq_agent_runs_retry_of_run_id"),
         Index("ix_agent_runs_owner_created_at", "owner_wallet_address", "created_at"),
         Index("ix_agent_runs_principal_created_at", "service_principal_id", "created_at"),
     )
@@ -637,6 +641,11 @@ class AgentRun(Base):
     manifest_sync_status: Mapped[str] = mapped_column(String(32), default="pending", nullable=False)
     manifest_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     manifest_sync_error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    # A retry is a new run over the same frozen inputs; the original run is never rewritten.
+    retry_of_run_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("agent_runs.id", name="fk_agent_runs_retry_of_run_id"), nullable=True
+    )
+    attempt: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
     finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)

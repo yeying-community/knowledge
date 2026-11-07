@@ -67,9 +67,14 @@ GET /service/runs/{run_id}/inputs
 GET /service/runs/{run_id}/steps
 GET /service/runs/{run_id}/events?after=<sequence>
 GET /service/runs/{run_id}/artifacts
+POST /service/runs/{run_id}/cancel
 ```
 
 `events` 同时支持 JSON 增量查询和 SSE。Chat 发送 `Accept: text/event-stream`，并使用 `Last-Event-ID` 传递上一个 sequence，即可在断线后续传；未启用流式连接时继续传 `?after=<sequence>` 轮询。Run 到达终态且已发送全部事件后，SSE 自动关闭。
+
+`POST /service/runs/{run_id}/cancel` 把未终结的 Run 置为 `cancelled`：排队中的 Run 不会再被 Worker 领取；已在执行的 Run，Worker 目前不在阶段之间检查取消状态，执行会继续跑到结束，但 Run 状态保持 `cancelled`。
+
+控制台用户（钱包 JWT）使用 `/analysis-runs` 下的创建、查询、事件和产物接口（暂无取消接口），事件流为 `GET /analysis-runs/{run_id}/events/stream`，产物可经 `GET /analysis-runs/{run_id}/artifacts/{artifact_id}/download` 下载。
 
 ## 2. 自然语言计划生成
 
@@ -116,12 +121,16 @@ Worker 同时处理原有知识导入任务和排队的 spreadsheet analysis Run
 - 输入不是 CSV/XLSX：创建 Run 返回 `400`。
 - 输入 SHA-256 与读取内容不同：Run 进入 `failed`，防止路径覆盖导致输入替换。
 - 文件超过 M1 限制、编码无法识别、XLSX 损坏或包含宏：Run 进入 `failed`。
-- Warehouse 临时读取错误会标记为可重试事件；自动 retry/attempt 属于 M2。
+- Warehouse 临时读取错误会标记为可重试事件。调用方可对 `failed` 或 `cancelled` 的 Run 调用 `POST /service/runs/{run_id}/retry`：系统新建一个 `queued` 子 Run，复用原 Run 冻结后的输入（含 sha256）、intent 与 constraints，`attempt` 加 1，`retry_of_run_id` 指向原 Run；原 Run 的状态、事件和产物不变。同一 Run 只能派生一个重试，重复调用返回同一子 Run；要再试，请对最新一次尝试调用 retry。对仍在排队/运行或已完成的 Run 调用返回 `409`。由于复用冻结 sha256，源文件被覆盖后重试会明确失败，不会静默读取新内容。
 
 失败原因只写入脱敏摘要，不能包含 Warehouse 密钥或完整文件内容。
 
 ## 6. 下一开发批次
 
-1. 基于 DuckDB/PyArrow 替换 M1 内存执行器。
-2. Chat 服务端代理、Run 状态 UI 和产物下载。
-3. SSE、取消检查、retry/attempt 和大文件流式处理。
+SSE 事件流（含 `Last-Event-ID` 续传）和取消接口已实现，见 §1。以下为尚未完成的事项：
+
+1. 基于 DuckDB/PyArrow 替换 M1 内存执行器（当前依赖中尚无 `duckdb`/`pyarrow`）。
+2. Warehouse Range 分段读取和大文件流式处理，替代当前的完整对象读取。
+3. retry/attempt：已实现手动重试（见 §5）；自动重试策略仍未实现。
+4. Worker 在执行阶段之间检查取消状态，及时中止已取消的 Run。
+5. Chat 侧服务端代理、Run 状态 UI 和产物下载：属于独立的 Chat 仓库，不在本仓库实现。
