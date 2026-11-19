@@ -520,6 +520,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/service/runs/{run_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Agent Run */
+        post: operations["retry_agent_run_service_runs__run_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{run_id}/manifest/retry": {
         parameters: {
             query?: never;
@@ -634,6 +651,41 @@ export interface paths {
         get: operations["download_my_analysis_artifact_analysis_runs__run_id__artifacts__artifact_id__download_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/warehouse/tool-credential": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tool Credential */
+        get: operations["get_tool_credential_warehouse_tool_credential_get"];
+        put?: never;
+        post?: never;
+        /** Disconnect Tool Credential */
+        delete: operations["disconnect_tool_credential_warehouse_tool_credential_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/warehouse/tool-credential/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Connect Tool Credential */
+        post: operations["connect_tool_credential_warehouse_tool_credential_connect_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1350,6 +1402,125 @@ export interface paths {
         patch: operations["update_item_kbs__kb_id__items__item_id__patch"];
         trace?: never;
     };
+    "/kbs/{kb_id}/items/{item_id}/kdg": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Kdg Status */
+        get: operations["get_kdg_status_kbs__kb_id__items__item_id__kdg_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/items/{item_id}/kdg/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Kdg Settings */
+        put: operations["update_kdg_settings_kbs__kb_id__items__item_id__kdg_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/items/{item_id}/kdg/relations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Kdg Relation */
+        post: operations["add_kdg_relation_kbs__kb_id__items__item_id__kdg_relations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/items/{item_id}/kdg/relations/{relation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Kdg Relation */
+        delete: operations["remove_kdg_relation_kbs__kb_id__items__item_id__kdg_relations__relation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/items/{item_id}/kdg/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prepare Kdg Publication */
+        post: operations["prepare_kdg_publication_kbs__kb_id__items__item_id__kdg_prepare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/items/{item_id}/kdg/publications/{publication_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Kdg Publication */
+        post: operations["submit_kdg_publication_kbs__kb_id__items__item_id__kdg_publications__publication_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/items/{item_id}/kdg/publications/{publication_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Kdg Publication */
+        post: operations["refresh_kdg_publication_kbs__kb_id__items__item_id__kdg_publications__publication_id__refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/kbs/{kb_id}/releases": {
         parameters: {
             query?: never;
@@ -1428,6 +1599,23 @@ export interface paths {
         };
         /** Get Release */
         get: operations["get_release_kbs__kb_id__releases__release_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/releases/{release_id}/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Diff Release */
+        get: operations["diff_release_kbs__kb_id__releases__release_id__diff_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1798,6 +1986,194 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kbs/{kb_id}/ontology/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Evidence */
+        post: operations["create_evidence_kbs__kb_id__ontology_evidence_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/ontology/evidence/{evidence_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Evidence */
+        get: operations["get_evidence_kbs__kb_id__ontology_evidence__evidence_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/ontology/objects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Objects */
+        get: operations["list_objects_kbs__kb_id__ontology_objects_get"];
+        put?: never;
+        /** Create Object */
+        post: operations["create_object_kbs__kb_id__ontology_objects_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/ontology/objects/{object_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Object */
+        get: operations["get_object_kbs__kb_id__ontology_objects__object_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/ontology/objects/{object_id}/identifiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register Identifier */
+        post: operations["register_identifier_kbs__kb_id__ontology_objects__object_id__identifiers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/ontology/objects/{object_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Identity */
+        post: operations["review_identity_kbs__kb_id__ontology_objects__object_id__reviews_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/ontology/objects/{object_id}/crosswalks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Crosswalk */
+        post: operations["confirm_crosswalk_kbs__kb_id__ontology_objects__object_id__crosswalks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/ontology/objects/{claimant_object_id}/conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report Identifier Conflict */
+        post: operations["report_identifier_conflict_kbs__kb_id__ontology_objects__claimant_object_id__conflicts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/ontology/conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Conflicts */
+        get: operations["list_conflicts_kbs__kb_id__ontology_conflicts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/ontology/conflicts/{conflict_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Conflict */
+        get: operations["get_conflict_kbs__kb_id__ontology_conflicts__conflict_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kbs/{kb_id}/ontology/conflicts/{conflict_id}/adjudications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adjudicate Conflict */
+        post: operations["adjudicate_conflict_kbs__kb_id__ontology_conflicts__conflict_id__adjudications_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ops/overview": {
         parameters: {
             query?: never;
@@ -2031,6 +2407,13 @@ export interface components {
             manifest_synced_at?: string | null;
             /** Manifest Sync Error */
             manifest_sync_error: string;
+            /** Retry Of Run Id */
+            retry_of_run_id?: string | null;
+            /**
+             * Attempt
+             * @default 1
+             */
+            attempt: number;
             /**
              * Started At
              * Format: date-time
@@ -2522,6 +2905,174 @@ export interface components {
             /** Recent Tasks */
             recent_tasks: components["schemas"]["KBRecentTaskResponse"][];
         };
+        /** KdgDomain */
+        KdgDomain: {
+            /** Id */
+            id: number;
+            /** Name Zh */
+            name_zh: string;
+            /** Name En */
+            name_en: string;
+        };
+        /**
+         * KdgGeneratedBy
+         * @description 修订的模型来源:model 为空表示人工撰写;human_edited 表示模型生成后经人工修改核对。
+         */
+        KdgGeneratedBy: {
+            /**
+             * Model
+             * @default
+             */
+            model: string;
+            /**
+             * Human Edited
+             * @default false
+             */
+            human_edited: boolean;
+        };
+        /**
+         * KdgIntent
+         * @description 交给钱包签名的意图(zhixing_signKnowledgeOp 的参数):谁、第几条、做什么。
+         */
+        KdgIntent: {
+            /** Actor */
+            actor: string;
+            /** Nonce */
+            nonce: string;
+            /** Action */
+            action: Record<string, never>;
+        };
+        /** KdgPrepareRequest */
+        KdgPrepareRequest: {
+            /**
+             * Pubkey
+             * @description 钱包里知行图账户的公钥(zhixing_requestAccounts 返回),64 位十六进制
+             */
+            pubkey: string;
+        };
+        /** KdgPrepareResponse */
+        KdgPrepareResponse: {
+            publication: components["schemas"]["KdgPublicationRead"];
+            intent: components["schemas"]["KdgIntent"];
+            /** Body Markdown */
+            body_markdown: string;
+        };
+        /** KdgPublicationRead */
+        KdgPublicationRead: {
+            /** Id */
+            id: number;
+            /** Revision Id */
+            revision_id: number;
+            /** Network */
+            network: string;
+            /** Status */
+            status: string;
+            /** Op Type */
+            op_type: string;
+            /** Chain Unit */
+            chain_unit?: number | null;
+            /** Chain Version */
+            chain_version?: number | null;
+            /** Body Sha256 */
+            body_sha256: string;
+            /** Body Url */
+            body_url: string;
+            /** Op Hash */
+            op_hash: string;
+            /** Actor */
+            actor?: number | null;
+            /** Actor Pubkey */
+            actor_pubkey: string;
+            /** Error */
+            error: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** KdgRelationCreateRequest */
+        KdgRelationCreateRequest: {
+            /** To Item Id */
+            to_item_id: number;
+            /**
+             * Kind
+             * @default basis
+             * @enum {string}
+             */
+            kind: "basis" | "see-also" | "supersedes";
+        };
+        /** KdgRelationRead */
+        KdgRelationRead: {
+            /** Id */
+            id: number;
+            /** To Item Id */
+            to_item_id: number;
+            /** Kind */
+            kind: string;
+            /** To Chain Unit */
+            to_chain_unit?: number | null;
+        };
+        /** KdgSettingsUpdateRequest */
+        KdgSettingsUpdateRequest: {
+            /**
+             * Domain
+             * @description 知行图领域编号(链的创世参数,见 /id/domain)
+             */
+            domain?: number | null;
+            /** Layer */
+            layer?: ("foundation" | "explanation" | "scenario" | "application") | null;
+            /**
+             * Language
+             * @description 当前修订正文的语言,如 zh、en
+             */
+            language?: string | null;
+            generated_by?: components["schemas"]["KdgGeneratedBy"] | null;
+        };
+        /** KdgStatusResponse */
+        KdgStatusResponse: {
+            /** Enabled */
+            enabled: boolean;
+            /** Domains */
+            domains?: components["schemas"]["KdgDomain"][];
+            /** Network */
+            network: string;
+            /** Domain */
+            domain?: number | null;
+            /** Layer */
+            layer?: string | null;
+            /** Chain Unit */
+            chain_unit?: number | null;
+            /** Chain Version */
+            chain_version?: number | null;
+            /** Unit Url */
+            unit_url?: string | null;
+            /** Current Revision Published */
+            current_revision_published: boolean;
+            pending?: components["schemas"]["KdgPublicationRead"] | null;
+            /** Relations */
+            relations: components["schemas"]["KdgRelationRead"][];
+            /** Publications */
+            publications: components["schemas"]["KdgPublicationRead"][];
+        };
+        /** KdgSubmitRequest */
+        KdgSubmitRequest: {
+            /**
+             * Signed
+             * @description 钱包返回的 signed:op ‖ 签名 的十六进制
+             */
+            signed: string;
+            /**
+             * Address
+             * @description 钱包返回的 address:签名所用的知行图公钥
+             */
+            address: string;
+        };
         /** KnowledgeItemCandidateRead */
         KnowledgeItemCandidateRead: {
             /** Id */
@@ -2911,6 +3462,284 @@ export interface components {
              */
             ok: boolean;
         };
+        /** OntologyConflictAdjudicate */
+        OntologyConflictAdjudicate: {
+            /**
+             * Decision
+             * @default claim_rejected
+             * @constant
+             * @enum {string}
+             */
+            decision: "claim_rejected";
+            /** Rationale */
+            rationale: string;
+            /** Evidence Id */
+            evidence_id: number;
+        };
+        /** OntologyConflictRead */
+        OntologyConflictRead: {
+            /** Id */
+            id: string;
+            /** Kb Id */
+            kb_id: number;
+            /** Existing Object Id */
+            existing_object_id: string;
+            /** Claimant Object Id */
+            claimant_object_id: string;
+            /** Namespace */
+            namespace: string;
+            /** Value */
+            value: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "claim_rejected";
+            /**
+             * Reported At
+             * Format: date-time
+             */
+            reported_at: string;
+            /** Reports */
+            reports?: components["schemas"]["OntologyConflictReportRead"][];
+            resolution?: components["schemas"]["OntologyConflictResolutionRead"] | null;
+        };
+        /** OntologyConflictReportCreate */
+        OntologyConflictReportCreate: {
+            /** Namespace */
+            namespace: string;
+            /** Value */
+            value: string;
+            /** Evidence Id */
+            evidence_id: number;
+        };
+        /** OntologyConflictReportRead */
+        OntologyConflictReportRead: {
+            /** Id */
+            id: number;
+            /** Evidence Id */
+            evidence_id: number;
+            /** Reported By */
+            reported_by: string;
+            /**
+             * Reported At
+             * Format: date-time
+             */
+            reported_at: string;
+        };
+        /** OntologyConflictResolutionRead */
+        OntologyConflictResolutionRead: {
+            /**
+             * Decision
+             * @constant
+             * @enum {string}
+             */
+            decision: "claim_rejected";
+            /** Rationale */
+            rationale: string;
+            /** Evidence Id */
+            evidence_id: number;
+            /** Adjudicated By */
+            adjudicated_by: string;
+            /**
+             * Adjudicated At
+             * Format: date-time
+             */
+            adjudicated_at: string;
+        };
+        /** OntologyCrosswalkCreate */
+        OntologyCrosswalkCreate: {
+            /** Namespace */
+            namespace: string;
+            /** Source Value */
+            source_value: string;
+            /** Authority */
+            authority: string;
+            /** Canonical Namespace */
+            canonical_namespace: string;
+            /** Canonical Value */
+            canonical_value: string;
+            /** Evidence Id */
+            evidence_id: number;
+        };
+        /** OntologyCrosswalkRead */
+        OntologyCrosswalkRead: {
+            /** Id */
+            id: number;
+            /** Namespace */
+            namespace: string;
+            /** Source Value */
+            source_value: string;
+            /** Authority */
+            authority: string;
+            /** Canonical Namespace */
+            canonical_namespace: string;
+            /** Canonical Value */
+            canonical_value: string;
+            /** Evidence Id */
+            evidence_id: number;
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** OntologyEvidenceCreate */
+        OntologyEvidenceCreate: {
+            /** Uri */
+            uri: string;
+            /** Source Version */
+            source_version: string;
+            /**
+             * Locator
+             * @default
+             */
+            locator: string;
+            /**
+             * Checksum
+             * @default
+             */
+            checksum: string;
+        };
+        /** OntologyEvidenceRead */
+        OntologyEvidenceRead: {
+            /** Uri */
+            uri: string;
+            /** Source Version */
+            source_version: string;
+            /**
+             * Locator
+             * @default
+             */
+            locator: string;
+            /**
+             * Checksum
+             * @default
+             */
+            checksum: string;
+            /** Id */
+            id: number;
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** OntologyIdentifierCreate */
+        OntologyIdentifierCreate: {
+            /** Namespace */
+            namespace: string;
+            /** Value */
+            value: string;
+            /** Evidence Id */
+            evidence_id: number;
+        };
+        /** OntologyIdentifierRead */
+        OntologyIdentifierRead: {
+            /** Id */
+            id: number;
+            /** Object Id */
+            object_id: string;
+            /** Namespace */
+            namespace: string;
+            /** Value */
+            value: string;
+            /** Evidence Id */
+            evidence_id: number;
+            /** Registered By */
+            registered_by: string;
+            /**
+             * Registered At
+             * Format: date-time
+             */
+            registered_at: string;
+        };
+        /** OntologyObjectCreate */
+        OntologyObjectCreate: {
+            /**
+             * Object Type
+             * @enum {string}
+             */
+            object_type: "contract" | "product" | "organization";
+            /** Label */
+            label: string;
+            /** Evidence Id */
+            evidence_id: number;
+        };
+        /** OntologyObjectRead */
+        OntologyObjectRead: {
+            /** Id */
+            id: string;
+            /** Kb Id */
+            kb_id: number;
+            /**
+             * Object Type
+             * @enum {string}
+             */
+            object_type: "contract" | "product" | "organization";
+            /** Label */
+            label: string;
+            /**
+             * Identity Status
+             * @enum {string}
+             */
+            identity_status: "candidate" | "confirmed" | "ambiguous" | "insufficient_evidence";
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Identifiers */
+            identifiers?: components["schemas"]["OntologyIdentifierRead"][];
+            /** Reviews */
+            reviews?: components["schemas"]["OntologyReviewRead"][];
+            /** Crosswalks */
+            crosswalks?: components["schemas"]["OntologyCrosswalkRead"][];
+        };
+        /** OntologyReviewCreate */
+        OntologyReviewCreate: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "candidate" | "ambiguous" | "insufficient_evidence";
+            /** Rationale */
+            rationale: string;
+            /** Evidence Id */
+            evidence_id: number;
+        };
+        /** OntologyReviewRead */
+        OntologyReviewRead: {
+            /** Id */
+            id: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "candidate" | "confirmed" | "ambiguous" | "insufficient_evidence";
+            /** Rationale */
+            rationale: string;
+            /** Evidence Id */
+            evidence_id: number;
+            /** Reviewed By */
+            reviewed_by: string;
+            /**
+             * Reviewed At
+             * Format: date-time
+             */
+            reviewed_at: string;
+        };
         /** OpsOverviewResponse */
         OpsOverviewResponse: {
             /**
@@ -3024,6 +3853,61 @@ export interface components {
             release: components["schemas"]["KBReleaseRead"];
             /** Items */
             items?: components["schemas"]["KBReleaseItemRead"][];
+        };
+        /** ReleaseDiffCounts */
+        ReleaseDiffCounts: {
+            /**
+             * Added
+             * @default 0
+             */
+            added: number;
+            /**
+             * Removed
+             * @default 0
+             */
+            removed: number;
+            /**
+             * Changed
+             * @default 0
+             */
+            changed: number;
+            /**
+             * Unchanged
+             * @default 0
+             */
+            unchanged: number;
+        };
+        /** ReleaseDiffEntry */
+        ReleaseDiffEntry: {
+            /** Knowledge Item Id */
+            knowledge_item_id: number;
+            /**
+             * Change
+             * @enum {string}
+             */
+            change: "added" | "removed" | "changed" | "unchanged";
+            /** Item Type */
+            item_type: string;
+            /** Title */
+            title: string;
+            /** Base Title */
+            base_title?: string | null;
+            /** Base Revision Id */
+            base_revision_id?: number | null;
+            /** Target Revision Id */
+            target_revision_id?: number | null;
+            /** Base Version Hash */
+            base_version_hash?: string | null;
+            /** Target Version Hash */
+            target_version_hash?: string | null;
+        };
+        /** ReleaseDiffResponse */
+        ReleaseDiffResponse: {
+            base_release: components["schemas"]["KBReleaseRead"];
+            release: components["schemas"]["KBReleaseRead"];
+            counts: components["schemas"]["ReleaseDiffCounts"];
+            /** Entries */
+            entries?: components["schemas"]["ReleaseDiffEntry"][];
         };
         /** ReleaseHotfixRequest */
         ReleaseHotfixRequest: {
@@ -3937,6 +4821,8 @@ export interface components {
              * Format: date-time
              */
             refresh_expires_at: string;
+            /** Did */
+            did?: string | null;
         };
         /** UnitReindexResponse */
         UnitReindexResponse: {
@@ -4012,6 +4898,61 @@ export interface components {
             wallet_address: string;
             /** Signature */
             signature: string;
+        };
+        /** WalletIdentityLoginResultEnvelope */
+        WalletIdentityLoginResultEnvelope: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @default ok
+             */
+            message: string;
+            data: components["schemas"]["TokenResponse"];
+        };
+        /** WalletIdentityLoginSession */
+        WalletIdentityLoginSession: {
+            /** Session Id */
+            session_id: string;
+            /** Audience */
+            audience: string;
+            /** Nonce */
+            nonce: string;
+            /** Scopes */
+            scopes: string[];
+            /** Issuerendpoint */
+            issuerEndpoint?: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** WalletIdentityLoginSessionEnvelope */
+        WalletIdentityLoginSessionEnvelope: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @default ok
+             */
+            message: string;
+            data: components["schemas"]["WalletIdentityLoginSession"];
+        };
+        /** WalletIdentityLoginVerifyRequest */
+        WalletIdentityLoginVerifyRequest: {
+            /** Session Id */
+            session_id: string;
+            /** Request Id */
+            request_id?: string | null;
+            /** Presentation */
+            presentation: Record<string, never>;
         };
         /** WarehouseBootstrapChallengeResponse */
         WarehouseBootstrapChallengeResponse: {
@@ -4197,6 +5138,29 @@ export interface components {
             current_app_upload_dir?: string | null;
             /** Warehouse Base Url */
             warehouse_base_url?: string | null;
+            /** Warehouse Api Base Url */
+            warehouse_api_base_url?: string | null;
+        };
+        /** WarehouseToolCredentialConnectRequest */
+        WarehouseToolCredentialConnectRequest: {
+            /** Warehouse Jwt */
+            warehouse_jwt: string;
+        };
+        /** WarehouseToolCredentialSummary */
+        WarehouseToolCredentialSummary: {
+            /** Credential Id */
+            credential_id: string;
+            /** Scopes */
+            scopes: string[];
+            /** Path Prefixes */
+            path_prefixes: string[];
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Status */
+            status: string;
         };
         /** WarehouseWriteCredentialResponse */
         WarehouseWriteCredentialResponse: {
@@ -4360,7 +5324,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["WalletIdentityLoginSessionEnvelope"];
                 };
             };
         };
@@ -4374,7 +5338,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": Record<string, never>;
+                "application/json": components["schemas"]["WalletIdentityLoginVerifyRequest"];
             };
         };
         responses: {
@@ -4384,7 +5348,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenResponse"];
+                    "application/json": components["schemas"]["WalletIdentityLoginResultEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -5368,6 +6332,39 @@ export interface operations {
             };
         };
     };
+    retry_agent_run_service_runs__run_id__retry_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Service-Api-Key": string;
+            };
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRunRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     retry_agent_run_manifest_runs__run_id__manifest_retry_post: {
         parameters: {
             query?: never;
@@ -5599,6 +6596,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tool_credential_warehouse_tool_credential_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WarehouseToolCredentialSummary"] | null;
+                };
+            };
+        };
+    };
+    disconnect_tool_credential_warehouse_tool_credential_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WarehouseToolCredentialConnectRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    connect_tool_credential_warehouse_tool_credential_connect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WarehouseToolCredentialConnectRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WarehouseToolCredentialSummary"];
                 };
             };
             /** @description Validation Error */
@@ -7079,6 +8162,249 @@ export interface operations {
             };
         };
     };
+    get_kdg_status_kbs__kb_id__items__item_id__kdg_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KdgStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_kdg_settings_kbs__kb_id__items__item_id__kdg_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KdgSettingsUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KdgStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_kdg_relation_kbs__kb_id__items__item_id__kdg_relations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KdgRelationCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KdgStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_kdg_relation_kbs__kb_id__items__item_id__kdg_relations__relation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                item_id: number;
+                relation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KdgStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prepare_kdg_publication_kbs__kb_id__items__item_id__kdg_prepare_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KdgPrepareRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KdgPrepareResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_kdg_publication_kbs__kb_id__items__item_id__kdg_publications__publication_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                item_id: number;
+                publication_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KdgSubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KdgPublicationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_kdg_publication_kbs__kb_id__items__item_id__kdg_publications__publication_id__refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                item_id: number;
+                publication_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KdgPublicationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_releases_kbs__kb_id__releases_get: {
         parameters: {
             query?: never;
@@ -7267,6 +8593,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReleaseDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    diff_release_kbs__kb_id__releases__release_id__diff_get: {
+        parameters: {
+            query?: {
+                /** @description Base release id; defaults to the release this one superseded. */
+                base?: number | null;
+                include_unchanged?: boolean;
+            };
+            header?: never;
+            path: {
+                kb_id: number;
+                release_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleaseDiffResponse"];
                 };
             };
             /** @description Validation Error */
@@ -8102,6 +9464,421 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemoryIngestionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_evidence_kbs__kb_id__ontology_evidence_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OntologyEvidenceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyEvidenceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_evidence_kbs__kb_id__ontology_evidence__evidence_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                evidence_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyEvidenceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_objects_kbs__kb_id__ontology_objects_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                kb_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyObjectRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_object_kbs__kb_id__ontology_objects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OntologyObjectCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyObjectRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_object_kbs__kb_id__ontology_objects__object_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                object_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyObjectRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_identifier_kbs__kb_id__ontology_objects__object_id__identifiers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                object_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OntologyIdentifierCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyIdentifierRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_identity_kbs__kb_id__ontology_objects__object_id__reviews_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                object_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OntologyReviewCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyReviewRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_crosswalk_kbs__kb_id__ontology_objects__object_id__crosswalks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                object_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OntologyCrosswalkCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyCrosswalkRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_identifier_conflict_kbs__kb_id__ontology_objects__claimant_object_id__conflicts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                claimant_object_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OntologyConflictReportCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_conflicts_kbs__kb_id__ontology_conflicts_get: {
+        parameters: {
+            query?: {
+                status?: ("open" | "claim_rejected") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                kb_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyConflictRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_conflict_kbs__kb_id__ontology_conflicts__conflict_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                conflict_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adjudicate_conflict_kbs__kb_id__ontology_conflicts__conflict_id__adjudications_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: number;
+                conflict_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OntologyConflictAdjudicate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyConflictRead"];
                 };
             };
             /** @description Validation Error */

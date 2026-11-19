@@ -1089,6 +1089,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /service/runs/{run_id}/retry:
+    post:
+      tags:
+      - agent_runs
+      summary: Retry Agent Run
+      operationId: retry_agent_run_service_runs__run_id__retry_post
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      - name: X-Service-Api-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          title: X-Service-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRunRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /runs/{run_id}/manifest/retry:
     post:
       tags:
@@ -1325,6 +1357,78 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /warehouse/tool-credential:
+    get:
+      tags:
+      - warehouse_sources
+      summary: Get Tool Credential
+      operationId: get_tool_credential_warehouse_tool_credential_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/WarehouseToolCredentialSummary'
+                - type: 'null'
+                title: Response Get Tool Credential Warehouse Tool Credential Get
+      security:
+      - HTTPBearer: []
+    delete:
+      tags:
+      - warehouse_sources
+      summary: Disconnect Tool Credential
+      operationId: disconnect_tool_credential_warehouse_tool_credential_delete
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarehouseToolCredentialConnectRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                title: Response Disconnect Tool Credential Warehouse Tool Credential Delete
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /warehouse/tool-credential/connect:
+    post:
+      tags:
+      - warehouse_sources
+      summary: Connect Tool Credential
+      operationId: connect_tool_credential_warehouse_tool_credential_connect_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarehouseToolCredentialConnectRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseToolCredentialSummary'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
   /warehouse/status:
     get:
       tags:
@@ -2791,6 +2895,286 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/items/{item_id}/kdg:
+    get:
+      tags:
+      - kdg
+      summary: Get Kdg Status
+      operationId: get_kdg_status_kbs__kb_id__items__item_id__kdg_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Item Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KdgStatusResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/items/{item_id}/kdg/settings:
+    put:
+      tags:
+      - kdg
+      summary: Update Kdg Settings
+      operationId: update_kdg_settings_kbs__kb_id__items__item_id__kdg_settings_put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Item Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KdgSettingsUpdateRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KdgStatusResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/items/{item_id}/kdg/relations:
+    post:
+      tags:
+      - kdg
+      summary: Add Kdg Relation
+      operationId: add_kdg_relation_kbs__kb_id__items__item_id__kdg_relations_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Item Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KdgRelationCreateRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KdgStatusResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/items/{item_id}/kdg/relations/{relation_id}:
+    delete:
+      tags:
+      - kdg
+      summary: Remove Kdg Relation
+      operationId: remove_kdg_relation_kbs__kb_id__items__item_id__kdg_relations__relation_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Item Id
+      - name: relation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Relation Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KdgStatusResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/items/{item_id}/kdg/prepare:
+    post:
+      tags:
+      - kdg
+      summary: Prepare Kdg Publication
+      operationId: prepare_kdg_publication_kbs__kb_id__items__item_id__kdg_prepare_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Item Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KdgPrepareRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KdgPrepareResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/items/{item_id}/kdg/publications/{publication_id}/submit:
+    post:
+      tags:
+      - kdg
+      summary: Submit Kdg Publication
+      operationId: submit_kdg_publication_kbs__kb_id__items__item_id__kdg_publications__publication_id__submit_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Item Id
+      - name: publication_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Publication Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KdgSubmitRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KdgPublicationRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/items/{item_id}/kdg/publications/{publication_id}/refresh:
+    post:
+      tags:
+      - kdg
+      summary: Refresh Kdg Publication
+      operationId: refresh_kdg_publication_kbs__kb_id__items__item_id__kdg_publications__publication_id__refresh_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Item Id
+      - name: publication_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Publication Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KdgPublicationRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /kbs/{kb_id}/releases:
     post:
       tags:
@@ -2991,6 +3375,57 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReleaseDetailResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/releases/{release_id}/diff:
+    get:
+      tags:
+      - releases
+      summary: Diff Release
+      operationId: diff_release_kbs__kb_id__releases__release_id__diff_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: release_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Release Id
+      - name: base
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          description: Base release id; defaults to the release this one superseded.
+          title: Base
+        description: Base release id; defaults to the release this one superseded.
+      - name: include_unchanged
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Unchanged
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseDiffResponse'
         '422':
           description: Validation Error
           content:
@@ -3797,6 +4232,482 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
       - HTTPBearer: []
+  /kbs/{kb_id}/ontology/evidence:
+    post:
+      tags:
+      - ontology
+      summary: Create Evidence
+      operationId: create_evidence_kbs__kb_id__ontology_evidence_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OntologyEvidenceCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OntologyEvidenceRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/ontology/evidence/{evidence_id}:
+    get:
+      tags:
+      - ontology
+      summary: Get Evidence
+      operationId: get_evidence_kbs__kb_id__ontology_evidence__evidence_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: evidence_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Evidence Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OntologyEvidenceRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/ontology/objects:
+    post:
+      tags:
+      - ontology
+      summary: Create Object
+      operationId: create_object_kbs__kb_id__ontology_objects_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OntologyObjectCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OntologyObjectRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - ontology
+      summary: List Objects
+      operationId: list_objects_kbs__kb_id__ontology_objects_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 100
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OntologyObjectRead'
+                title: Response List Objects Kbs  Kb Id  Ontology Objects Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/ontology/objects/{object_id}:
+    get:
+      tags:
+      - ontology
+      summary: Get Object
+      operationId: get_object_kbs__kb_id__ontology_objects__object_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: object_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Object Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OntologyObjectRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/ontology/objects/{object_id}/identifiers:
+    post:
+      tags:
+      - ontology
+      summary: Register Identifier
+      operationId: register_identifier_kbs__kb_id__ontology_objects__object_id__identifiers_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: object_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Object Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OntologyIdentifierCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OntologyIdentifierRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/ontology/objects/{object_id}/reviews:
+    post:
+      tags:
+      - ontology
+      summary: Review Identity
+      operationId: review_identity_kbs__kb_id__ontology_objects__object_id__reviews_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: object_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Object Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OntologyReviewCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OntologyReviewRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/ontology/objects/{object_id}/crosswalks:
+    post:
+      tags:
+      - ontology
+      summary: Confirm Crosswalk
+      operationId: confirm_crosswalk_kbs__kb_id__ontology_objects__object_id__crosswalks_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: object_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Object Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OntologyCrosswalkCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OntologyCrosswalkRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/ontology/objects/{claimant_object_id}/conflicts:
+    post:
+      tags:
+      - ontology
+      summary: Report Identifier Conflict
+      operationId: report_identifier_conflict_kbs__kb_id__ontology_objects__claimant_object_id__conflicts_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: claimant_object_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Claimant Object Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OntologyConflictReportCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OntologyConflictRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/ontology/conflicts:
+    get:
+      tags:
+      - ontology
+      summary: List Conflicts
+      operationId: list_conflicts_kbs__kb_id__ontology_conflicts_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - open
+            - claim_rejected
+            type: string
+          - type: 'null'
+          title: Status
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 100
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OntologyConflictRead'
+                title: Response List Conflicts Kbs  Kb Id  Ontology Conflicts Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/ontology/conflicts/{conflict_id}:
+    get:
+      tags:
+      - ontology
+      summary: Get Conflict
+      operationId: get_conflict_kbs__kb_id__ontology_conflicts__conflict_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: conflict_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Conflict Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OntologyConflictRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /kbs/{kb_id}/ontology/conflicts/{conflict_id}/adjudications:
+    post:
+      tags:
+      - ontology
+      summary: Adjudicate Conflict
+      operationId: adjudicate_conflict_kbs__kb_id__ontology_conflicts__conflict_id__adjudications_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Kb Id
+      - name: conflict_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Conflict Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OntologyConflictAdjudicate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OntologyConflictRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /ops/overview:
     get:
       tags:
@@ -4144,6 +5055,15 @@ components:
         manifest_sync_error:
           type: string
           title: Manifest Sync Error
+        retry_of_run_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Retry Of Run Id
+        attempt:
+          type: integer
+          title: Attempt
+          default: 1
         started_at:
           type: string
           format: date-time
@@ -4956,6 +5876,297 @@ components:
       - bindings
       - recent_tasks
       title: KBWorkbenchResponse
+    KdgDomain:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name_zh:
+          type: string
+          title: Name Zh
+        name_en:
+          type: string
+          title: Name En
+      type: object
+      required:
+      - id
+      - name_zh
+      - name_en
+      title: KdgDomain
+    KdgGeneratedBy:
+      properties:
+        model:
+          type: string
+          maxLength: 64
+          title: Model
+          default: ''
+        human_edited:
+          type: boolean
+          title: Human Edited
+          default: false
+      type: object
+      title: KdgGeneratedBy
+      description: 修订的模型来源:model 为空表示人工撰写;human_edited 表示模型生成后经人工修改核对。
+    KdgIntent:
+      properties:
+        actor:
+          type: string
+          title: Actor
+        nonce:
+          type: string
+          title: Nonce
+        action:
+          type: object
+          title: Action
+      type: object
+      required:
+      - actor
+      - nonce
+      - action
+      title: KdgIntent
+      description: 交给钱包签名的意图(zhixing_signKnowledgeOp 的参数):谁、第几条、做什么。
+    KdgPrepareRequest:
+      properties:
+        pubkey:
+          type: string
+          title: Pubkey
+          description: 钱包里知行图账户的公钥(zhixing_requestAccounts 返回),64 位十六进制
+      type: object
+      required:
+      - pubkey
+      title: KdgPrepareRequest
+    KdgPrepareResponse:
+      properties:
+        publication:
+          $ref: '#/components/schemas/KdgPublicationRead'
+        intent:
+          $ref: '#/components/schemas/KdgIntent'
+        body_markdown:
+          type: string
+          title: Body Markdown
+      type: object
+      required:
+      - publication
+      - intent
+      - body_markdown
+      title: KdgPrepareResponse
+    KdgPublicationRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        revision_id:
+          type: integer
+          title: Revision Id
+        network:
+          type: string
+          title: Network
+        status:
+          type: string
+          title: Status
+        op_type:
+          type: string
+          title: Op Type
+        chain_unit:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Chain Unit
+        chain_version:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Chain Version
+        body_sha256:
+          type: string
+          title: Body Sha256
+        body_url:
+          type: string
+          title: Body Url
+        op_hash:
+          type: string
+          title: Op Hash
+        actor:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Actor
+        actor_pubkey:
+          type: string
+          title: Actor Pubkey
+        error:
+          type: string
+          title: Error
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - id
+      - revision_id
+      - network
+      - status
+      - op_type
+      - body_sha256
+      - body_url
+      - op_hash
+      - actor_pubkey
+      - error
+      - created_at
+      - updated_at
+      title: KdgPublicationRead
+    KdgRelationCreateRequest:
+      properties:
+        to_item_id:
+          type: integer
+          title: To Item Id
+        kind:
+          type: string
+          enum:
+          - basis
+          - see-also
+          - supersedes
+          title: Kind
+          default: basis
+      type: object
+      required:
+      - to_item_id
+      title: KdgRelationCreateRequest
+    KdgRelationRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        to_item_id:
+          type: integer
+          title: To Item Id
+        kind:
+          type: string
+          title: Kind
+        to_chain_unit:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: To Chain Unit
+      type: object
+      required:
+      - id
+      - to_item_id
+      - kind
+      title: KdgRelationRead
+    KdgSettingsUpdateRequest:
+      properties:
+        domain:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Domain
+          description: 知行图领域编号(链的创世参数,见 /id/domain)
+        layer:
+          anyOf:
+          - type: string
+            enum:
+            - foundation
+            - explanation
+            - scenario
+            - application
+          - type: 'null'
+          title: Layer
+        language:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Language
+          description: 当前修订正文的语言,如 zh、en
+        generated_by:
+          anyOf:
+          - $ref: '#/components/schemas/KdgGeneratedBy'
+          - type: 'null'
+      type: object
+      title: KdgSettingsUpdateRequest
+    KdgStatusResponse:
+      properties:
+        enabled:
+          type: boolean
+          title: Enabled
+        domains:
+          items:
+            $ref: '#/components/schemas/KdgDomain'
+          type: array
+          title: Domains
+        network:
+          type: string
+          title: Network
+        domain:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Domain
+        layer:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Layer
+        chain_unit:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Chain Unit
+        chain_version:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Chain Version
+        unit_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit Url
+        current_revision_published:
+          type: boolean
+          title: Current Revision Published
+        pending:
+          anyOf:
+          - $ref: '#/components/schemas/KdgPublicationRead'
+          - type: 'null'
+        relations:
+          items:
+            $ref: '#/components/schemas/KdgRelationRead'
+          type: array
+          title: Relations
+        publications:
+          items:
+            $ref: '#/components/schemas/KdgPublicationRead'
+          type: array
+          title: Publications
+      type: object
+      required:
+      - enabled
+      - network
+      - current_revision_published
+      - relations
+      - publications
+      title: KdgStatusResponse
+    KdgSubmitRequest:
+      properties:
+        signed:
+          type: string
+          title: Signed
+          description: 钱包返回的 signed:op ‖ 签名 的十六进制
+        address:
+          type: string
+          title: Address
+          description: 钱包返回的 address:签名所用的知行图公钥
+      type: object
+      required:
+      - signed
+      - address
+      title: KdgSubmitRequest
     KnowledgeItemCandidateRead:
       properties:
         id:
@@ -5648,6 +6859,499 @@ components:
           default: true
       type: object
       title: OkResponse
+    OntologyConflictAdjudicate:
+      properties:
+        decision:
+          type: string
+          enum:
+          - claim_rejected
+          const: claim_rejected
+          title: Decision
+          default: claim_rejected
+        rationale:
+          type: string
+          minLength: 1
+          title: Rationale
+        evidence_id:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Evidence Id
+      type: object
+      required:
+      - rationale
+      - evidence_id
+      title: OntologyConflictAdjudicate
+    OntologyConflictRead:
+      properties:
+        id:
+          type: string
+          title: Id
+        kb_id:
+          type: integer
+          title: Kb Id
+        existing_object_id:
+          type: string
+          title: Existing Object Id
+        claimant_object_id:
+          type: string
+          title: Claimant Object Id
+        namespace:
+          type: string
+          title: Namespace
+        value:
+          type: string
+          title: Value
+        status:
+          type: string
+          enum:
+          - open
+          - claim_rejected
+          title: Status
+        reported_at:
+          type: string
+          format: date-time
+          title: Reported At
+        reports:
+          items:
+            $ref: '#/components/schemas/OntologyConflictReportRead'
+          type: array
+          title: Reports
+        resolution:
+          anyOf:
+          - $ref: '#/components/schemas/OntologyConflictResolutionRead'
+          - type: 'null'
+      type: object
+      required:
+      - id
+      - kb_id
+      - existing_object_id
+      - claimant_object_id
+      - namespace
+      - value
+      - status
+      - reported_at
+      title: OntologyConflictRead
+    OntologyConflictReportCreate:
+      properties:
+        namespace:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Namespace
+        value:
+          type: string
+          maxLength: 1024
+          minLength: 1
+          title: Value
+        evidence_id:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Evidence Id
+      type: object
+      required:
+      - namespace
+      - value
+      - evidence_id
+      title: OntologyConflictReportCreate
+    OntologyConflictReportRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        evidence_id:
+          type: integer
+          title: Evidence Id
+        reported_by:
+          type: string
+          title: Reported By
+        reported_at:
+          type: string
+          format: date-time
+          title: Reported At
+      type: object
+      required:
+      - id
+      - evidence_id
+      - reported_by
+      - reported_at
+      title: OntologyConflictReportRead
+    OntologyConflictResolutionRead:
+      properties:
+        decision:
+          type: string
+          enum:
+          - claim_rejected
+          const: claim_rejected
+          title: Decision
+        rationale:
+          type: string
+          title: Rationale
+        evidence_id:
+          type: integer
+          title: Evidence Id
+        adjudicated_by:
+          type: string
+          title: Adjudicated By
+        adjudicated_at:
+          type: string
+          format: date-time
+          title: Adjudicated At
+      type: object
+      required:
+      - decision
+      - rationale
+      - evidence_id
+      - adjudicated_by
+      - adjudicated_at
+      title: OntologyConflictResolutionRead
+    OntologyCrosswalkCreate:
+      properties:
+        namespace:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Namespace
+        source_value:
+          type: string
+          maxLength: 1024
+          minLength: 1
+          title: Source Value
+        authority:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Authority
+        canonical_namespace:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Canonical Namespace
+        canonical_value:
+          type: string
+          maxLength: 1024
+          minLength: 1
+          title: Canonical Value
+        evidence_id:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Evidence Id
+      type: object
+      required:
+      - namespace
+      - source_value
+      - authority
+      - canonical_namespace
+      - canonical_value
+      - evidence_id
+      title: OntologyCrosswalkCreate
+    OntologyCrosswalkRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        namespace:
+          type: string
+          title: Namespace
+        source_value:
+          type: string
+          title: Source Value
+        authority:
+          type: string
+          title: Authority
+        canonical_namespace:
+          type: string
+          title: Canonical Namespace
+        canonical_value:
+          type: string
+          title: Canonical Value
+        evidence_id:
+          type: integer
+          title: Evidence Id
+        created_by:
+          type: string
+          title: Created By
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - namespace
+      - source_value
+      - authority
+      - canonical_namespace
+      - canonical_value
+      - evidence_id
+      - created_by
+      - created_at
+      title: OntologyCrosswalkRead
+    OntologyEvidenceCreate:
+      properties:
+        uri:
+          type: string
+          maxLength: 2048
+          minLength: 1
+          title: Uri
+        source_version:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Source Version
+        locator:
+          type: string
+          title: Locator
+          default: ''
+        checksum:
+          type: string
+          maxLength: 128
+          title: Checksum
+          default: ''
+      type: object
+      required:
+      - uri
+      - source_version
+      title: OntologyEvidenceCreate
+    OntologyEvidenceRead:
+      properties:
+        uri:
+          type: string
+          maxLength: 2048
+          minLength: 1
+          title: Uri
+        source_version:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Source Version
+        locator:
+          type: string
+          title: Locator
+          default: ''
+        checksum:
+          type: string
+          maxLength: 128
+          title: Checksum
+          default: ''
+        id:
+          type: integer
+          title: Id
+        created_by:
+          type: string
+          title: Created By
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - uri
+      - source_version
+      - id
+      - created_by
+      - created_at
+      title: OntologyEvidenceRead
+    OntologyIdentifierCreate:
+      properties:
+        namespace:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Namespace
+        value:
+          type: string
+          maxLength: 1024
+          minLength: 1
+          title: Value
+        evidence_id:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Evidence Id
+      type: object
+      required:
+      - namespace
+      - value
+      - evidence_id
+      title: OntologyIdentifierCreate
+    OntologyIdentifierRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        object_id:
+          type: string
+          title: Object Id
+        namespace:
+          type: string
+          title: Namespace
+        value:
+          type: string
+          title: Value
+        evidence_id:
+          type: integer
+          title: Evidence Id
+        registered_by:
+          type: string
+          title: Registered By
+        registered_at:
+          type: string
+          format: date-time
+          title: Registered At
+      type: object
+      required:
+      - id
+      - object_id
+      - namespace
+      - value
+      - evidence_id
+      - registered_by
+      - registered_at
+      title: OntologyIdentifierRead
+    OntologyObjectCreate:
+      properties:
+        object_type:
+          type: string
+          enum:
+          - contract
+          - product
+          - organization
+          title: Object Type
+        label:
+          type: string
+          maxLength: 512
+          minLength: 1
+          title: Label
+        evidence_id:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Evidence Id
+      type: object
+      required:
+      - object_type
+      - label
+      - evidence_id
+      title: OntologyObjectCreate
+    OntologyObjectRead:
+      properties:
+        id:
+          type: string
+          title: Id
+        kb_id:
+          type: integer
+          title: Kb Id
+        object_type:
+          type: string
+          enum:
+          - contract
+          - product
+          - organization
+          title: Object Type
+        label:
+          type: string
+          title: Label
+        identity_status:
+          type: string
+          enum:
+          - candidate
+          - confirmed
+          - ambiguous
+          - insufficient_evidence
+          title: Identity Status
+        created_by:
+          type: string
+          title: Created By
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        identifiers:
+          items:
+            $ref: '#/components/schemas/OntologyIdentifierRead'
+          type: array
+          title: Identifiers
+        reviews:
+          items:
+            $ref: '#/components/schemas/OntologyReviewRead'
+          type: array
+          title: Reviews
+        crosswalks:
+          items:
+            $ref: '#/components/schemas/OntologyCrosswalkRead'
+          type: array
+          title: Crosswalks
+      type: object
+      required:
+      - id
+      - kb_id
+      - object_type
+      - label
+      - identity_status
+      - created_by
+      - created_at
+      - updated_at
+      title: OntologyObjectRead
+    OntologyReviewCreate:
+      properties:
+        status:
+          type: string
+          enum:
+          - candidate
+          - ambiguous
+          - insufficient_evidence
+          title: Status
+        rationale:
+          type: string
+          minLength: 1
+          title: Rationale
+        evidence_id:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Evidence Id
+      type: object
+      required:
+      - status
+      - rationale
+      - evidence_id
+      title: OntologyReviewCreate
+    OntologyReviewRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        status:
+          type: string
+          enum:
+          - candidate
+          - confirmed
+          - ambiguous
+          - insufficient_evidence
+          title: Status
+        rationale:
+          type: string
+          title: Rationale
+        evidence_id:
+          type: integer
+          title: Evidence Id
+        reviewed_by:
+          type: string
+          title: Reviewed By
+        reviewed_at:
+          type: string
+          format: date-time
+          title: Reviewed At
+      type: object
+      required:
+      - id
+      - status
+      - rationale
+      - evidence_id
+      - reviewed_by
+      - reviewed_at
+      title: OntologyReviewRead
     OpsOverviewResponse:
       properties:
         knowledge_bases:
@@ -5773,6 +7477,96 @@ components:
       required:
       - release
       title: ReleaseDetailResponse
+    ReleaseDiffCounts:
+      properties:
+        added:
+          type: integer
+          title: Added
+          default: 0
+        removed:
+          type: integer
+          title: Removed
+          default: 0
+        changed:
+          type: integer
+          title: Changed
+          default: 0
+        unchanged:
+          type: integer
+          title: Unchanged
+          default: 0
+      type: object
+      title: ReleaseDiffCounts
+    ReleaseDiffEntry:
+      properties:
+        knowledge_item_id:
+          type: integer
+          title: Knowledge Item Id
+        change:
+          type: string
+          enum:
+          - added
+          - removed
+          - changed
+          - unchanged
+          title: Change
+        item_type:
+          type: string
+          title: Item Type
+        title:
+          type: string
+          title: Title
+        base_title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Base Title
+        base_revision_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Base Revision Id
+        target_revision_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Target Revision Id
+        base_version_hash:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Base Version Hash
+        target_version_hash:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Version Hash
+      type: object
+      required:
+      - knowledge_item_id
+      - change
+      - item_type
+      - title
+      title: ReleaseDiffEntry
+    ReleaseDiffResponse:
+      properties:
+        base_release:
+          $ref: '#/components/schemas/KBReleaseRead'
+        release:
+          $ref: '#/components/schemas/KBReleaseRead'
+        counts:
+          $ref: '#/components/schemas/ReleaseDiffCounts'
+        entries:
+          items:
+            $ref: '#/components/schemas/ReleaseDiffEntry'
+          type: array
+          title: Entries
+      type: object
+      required:
+      - base_release
+      - release
+      - counts
+      title: ReleaseDiffResponse
     ReleaseHotfixRequest:
       properties:
         version:
@@ -7914,10 +9708,56 @@ components:
           - type: string
           - type: 'null'
           title: Warehouse Base Url
+        warehouse_api_base_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Warehouse Api Base Url
       type: object
       required:
       - wallet_address
       title: WarehouseStatusResponse
+    WarehouseToolCredentialConnectRequest:
+      properties:
+        warehouse_jwt:
+          type: string
+          maxLength: 8192
+          minLength: 1
+          title: Warehouse Jwt
+      type: object
+      required:
+      - warehouse_jwt
+      title: WarehouseToolCredentialConnectRequest
+    WarehouseToolCredentialSummary:
+      properties:
+        credential_id:
+          type: string
+          title: Credential Id
+        scopes:
+          items:
+            type: string
+          type: array
+          title: Scopes
+        path_prefixes:
+          items:
+            type: string
+          type: array
+          title: Path Prefixes
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+        status:
+          type: string
+          title: Status
+      type: object
+      required:
+      - credential_id
+      - scopes
+      - path_prefixes
+      - expires_at
+      - status
+      title: WarehouseToolCredentialSummary
     WarehouseWriteCredentialResponse:
       properties:
         configured:

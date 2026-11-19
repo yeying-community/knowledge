@@ -20,7 +20,9 @@ from knowledge.models.entities import (
     KnowledgeItem,
     KnowledgeItemCandidate,
     KnowledgeItemEvidenceLink,
+    KnowledgeItemRelation,
     KnowledgeItemRevision,
+    KdgPublication,
     LongTermMemory,
     MemoryIngestionEvent,
     RetrievalLog,
@@ -33,7 +35,18 @@ from knowledge.models.entities import (
     UploadRecord,
     WalletUser,
     WarehouseAccessCredential,
+    WarehouseToolCredential,
     WorkerStatus,
+)
+from knowledge.models.ontology import (
+    OntologyConflictResolution,
+    OntologyCrosswalk,
+    OntologyEvidenceReference,
+    OntologyExternalIdentifier,
+    OntologyIdentifierConflict,
+    OntologyIdentifierConflictReport,
+    OntologyIdentityReview,
+    OntologyObject,
 )
 
 __all__ = [
@@ -58,7 +71,9 @@ __all__ = [
     "KnowledgeItem",
     "KnowledgeItemCandidate",
     "KnowledgeItemEvidenceLink",
+    "KnowledgeItemRelation",
     "KnowledgeItemRevision",
+    "KdgPublication",
     "LongTermMemory",
     "MemoryIngestionEvent",
     "RetrievalLog",
@@ -71,5 +86,14 @@ __all__ = [
     "UploadRecord",
     "WalletUser",
     "WarehouseAccessCredential",
+    "WarehouseToolCredential",
     "WorkerStatus",
+    "OntologyConflictResolution",
+    "OntologyCrosswalk",
+    "OntologyEvidenceReference",
+    "OntologyExternalIdentifier",
+    "OntologyIdentifierConflict",
+    "OntologyIdentifierConflictReport",
+    "OntologyIdentityReview",
+    "OntologyObject",
 ]

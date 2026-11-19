@@ -34,6 +34,9 @@ AGENT_RUN_MANIFEST_SYNC_STATUSES = ("pending", "synced", "failed")
 AGENT_ARTIFACT_STATUSES = ("draft", "final")
 WAREHOUSE_ACCESS_CREDENTIAL_KINDS = ("read", "read_write")
 WAREHOUSE_ACCESS_CREDENTIAL_STATUSES = ("active", "invalid", "revoked_local")
+# 知行图(KnowDoGraph)上链:领域与层级取自链的创世参数,引用关系取自链上的依据 / 参见 / 取代
+KDG_ITEM_RELATION_KINDS = ("basis", "see-also", "supersedes")
+KDG_PUBLICATION_STATUSES = ("prepared", "submitted", "confirmed", "failed")
 
 
 class WalletUser(Base):
@@ -66,7 +69,7 @@ class PassportLoginSession(Base):
     request_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     code_verifier: Mapped[str] = mapped_column(String(255), nullable=False)
     redirect_uri: Mapped[str] = mapped_column(String(1024), nullable=False)
-    state: Mapped[str | None] = mapped_column(String(128), unique=True, nullable=True)
+    state: Mapped[str | None] = mapped_column(String(128), unique=True, index=True, nullable=True)
     audience: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     nonce: Mapped[str | None] = mapped_column(String(255), nullable=True)
     scopes: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
@@ -91,6 +94,9 @@ class PassportSubject(Base):
 
 class KnowledgeBase(Base):
     __tablename__ = "knowledge_bases"
+    __table_args__ = (
+        UniqueConstraint("id", "owner_wallet_address", name="uq_knowledge_bases_id_owner_wallet"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     owner_wallet_address: Mapped[str] = mapped_column(ForeignKey("wallet_users.wallet_address"), index=True, nullable=False)
@@ -309,6 +315,21 @@ class WarehouseAccessCredential(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
 
 
+class WarehouseToolCredential(Base):
+    __tablename__ = "warehouse_tool_credentials"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    owner_wallet_address: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    warehouse_credential_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    encrypted_secret: Mapped[str] = mapped_column(Text, nullable=False)
+    scopes: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    path_prefixes: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    status: Mapped[str] = mapped_column(String(24), default="active", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+
 class LongTermMemory(Base):
     __tablename__ = "memories_long_term"
 
@@ -460,6 +481,9 @@ class KnowledgeItem(Base):
     lifecycle_status: Mapped[str] = mapped_column(String(32), default="confirmed", nullable=False)
     current_revision_id: Mapped[Optional[int]] = mapped_column(Integer, index=True, nullable=True)
     is_hotfix: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # 知行图上链用:领域与层级(链上创世参数里的编号;未设置表示还没上链)
+    kdg_domain: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    kdg_layer: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
 
@@ -488,6 +512,9 @@ class KnowledgeItemRevision(Base):
     reviewed_by: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     provenance_type: Mapped[str] = mapped_column(String(32), default="manual", nullable=False)
     provenance_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    # 知行图上链用:正文语言(默认 zh);模型来源(如 {"model": "claude-opus-5-5"}),人工核对过写 verified
+    language: Mapped[str] = mapped_column(String(16), default="zh", nullable=False)
+    generated_by_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     source_note: Mapped[str] = mapped_column(Text, default="", nullable=False)
     applicability_scope_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     effective_from: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
@@ -499,6 +526,60 @@ class KnowledgeItemRevision(Base):
     knowledge_item: Mapped["KnowledgeItem"] = relationship(back_populates="revisions")
     evidence_links: Mapped[list["KnowledgeItemEvidenceLink"]] = relationship(back_populates="knowledge_item_revision", cascade="all, delete-orphan")
     release_items: Mapped[list["KBReleaseItem"]] = relationship(back_populates="knowledge_item_revision", cascade="all, delete-orphan")
+
+
+class KnowledgeItemRelation(Base):
+    """条目之间的引用:上链到知行图时变成链上的依据 / 参见 / 取代。"""
+
+    __tablename__ = "knowledge_item_relations"
+    __table_args__ = (
+        UniqueConstraint("from_item_id", "to_item_id", "kind", name="uq_item_relation_from_to_kind"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    from_item_id: Mapped[int] = mapped_column(ForeignKey("knowledge_items.id"), index=True, nullable=False)
+    to_item_id: Mapped[int] = mapped_column(ForeignKey("knowledge_items.id"), index=True, nullable=False)
+    kind: Mapped[str] = mapped_column(String(32), default="basis", nullable=False)
+    created_by: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
+
+    from_item: Mapped["KnowledgeItem"] = relationship(foreign_keys=[from_item_id])
+    to_item: Mapped["KnowledgeItem"] = relationship(foreign_keys=[to_item_id])
+
+
+class KdgPublication(Base):
+    """一次「上链到知行图」:从准备、签名提交,到链上确认。
+
+    签名在浏览器里由夜莺钱包完成,服务端不接触私钥;这里只记录意图、签名结果与链上的落点。
+    """
+
+    __tablename__ = "kdg_publications"
+    __table_args__ = (
+        Index("ix_kdg_publications_revision_status", "revision_id", "status"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    revision_id: Mapped[int] = mapped_column(ForeignKey("knowledge_item_revisions.id"), index=True, nullable=False)
+    kb_id: Mapped[int] = mapped_column(ForeignKey("knowledge_bases.id"), index=True, nullable=False)
+    network: Mapped[str] = mapped_column(String(32), default="testnet", nullable=False)
+    status: Mapped[str] = mapped_column(String(24), default="prepared", nullable=False)
+    # 上链的是哪个单元、哪个版本(create 还是 publish)
+    op_type: Mapped[str] = mapped_column(String(24), default="create", nullable=False)
+    chain_unit: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    chain_version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    body_sha256: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    body_url: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    op_hash: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    # 签名用的账户:链上账户号与钱包里的公钥
+    actor: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    actor_pubkey: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    intent_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    created_by: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    revision: Mapped["KnowledgeItemRevision"] = relationship()
 
 
 class KnowledgeItemEvidenceLink(Base):
@@ -618,6 +699,7 @@ class AgentRun(Base):
     __tablename__ = "agent_runs"
     __table_args__ = (
         UniqueConstraint("service_principal_id", "external_id", name="uq_agent_runs_principal_external_id"),
+        UniqueConstraint("retry_of_run_id", name="uq_agent_runs_retry_of_run_id"),
         Index("ix_agent_runs_owner_created_at", "owner_wallet_address", "created_at"),
         Index("ix_agent_runs_principal_created_at", "service_principal_id", "created_at"),
     )
@@ -637,6 +719,11 @@ class AgentRun(Base):
     manifest_sync_status: Mapped[str] = mapped_column(String(32), default="pending", nullable=False)
     manifest_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     manifest_sync_error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    # A retry is a new run over the same frozen inputs; the original run is never rewritten.
+    retry_of_run_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("agent_runs.id", name="fk_agent_runs_retry_of_run_id"), nullable=True
+    )
+    attempt: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
     finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)

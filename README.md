@@ -7,6 +7,7 @@ Knowledge 是知识运营与发布服务。后端在 `knowledge/`，前端工程
 需要本机已安装：
 
 - Python 3.10+，命令使用 `python3`
+- [uv](https://docs.astral.sh/uv/)
 - Node.js 与 npm
 - PostgreSQL（本机服务或远程实例）
 
@@ -33,12 +34,9 @@ DATABASE_URL=postgresql://knowledge:knowledge@127.0.0.1:5432/knowledge?gssencmod
 在项目根目录执行：
 
 ```bash
-python3 --version
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+uv sync --locked
 (cd web && npm install)
-cp .env.template .env        # 按需修改 DATABASE_URL 等；生产配置见 docs/部署指南.md
+cp .env.template .env        # 按需修改 DATABASE_URL 等；生产配置见 docs/operations/部署指南.md
 ```
 
 服务配置的优先级为：进程环境变量 > `.env` > `config/local.toml` > `config/defaults.toml`。本地开发通常只需要 `.env`；部署主机在 `config/local.toml` 中取消注释并填入真实值。
@@ -50,16 +48,16 @@ Knowledge 的本地完整联调由一个后端进程和一个后台任务进程�
 先在第一个终端启动后端：
 
 ```bash
-source .venv/bin/activate
-python -m uvicorn knowledge.main:app --reload --host 127.0.0.1 --port 8002
+uv run knowledge
 ```
+
+默认监听 `127.0.0.1:8002` 并启用热重载。需要调整时可用 `uv run knowledge --host 0.0.0.0 --port 8002`；关闭热重载用 `uv run knowledge --no-reload`。
 
 再在第二个终端启动后台任务处理：
 
 ```bash
 cd /path/to/knowledge
-source .venv/bin/activate
-python -m knowledge.workers.runner
+uv run python -m knowledge.workers.runner
 ```
 
 后端只调试页面、接口或检索时，可以暂时不启动第二个进程；导入、重建索引、删除等异步任务需要它运行。
@@ -67,20 +65,18 @@ python -m knowledge.workers.runner
 数据库迁移使用：
 
 ```bash
-source .venv/bin/activate
-python -m alembic upgrade head
+uv run alembic upgrade head
 ```
 
 运行测试：
 
 ```bash
-source .venv/bin/activate
-python -m pytest -q
+uv run pytest -q
 ```
 
 后端启动后可以访问：
 
-- API: `http://127.0.0.1:8002/`（已构建 `web/dist` 时直接是控制台）
+- API base URL: `http://127.0.0.1:8002`（生产控制台由独立静态制品和 Nginx 提供）
 - Health: `http://127.0.0.1:8002/health`
 - Swagger UI: `http://127.0.0.1:8002/docs`
 
@@ -90,8 +86,7 @@ python -m pytest -q
 deactivate
 rm -rf .venv
 python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+uv sync --locked
 ```
 
 ### 4. 启动前端开发服务器
@@ -105,7 +100,7 @@ npm run dev
 
 前端默认访问：`http://127.0.0.1:5183/`
 
-前端开发服务器会把所有服务请求代理到后端（默认 `http://127.0.0.1:8002`，可用 `KNOWLEDGE_API_URL` 改写），所以先启动后端。生产环境不运行开发服务器：`cd web && npm run build` 生成 `web/dist` 后由后端提供控制台。
+前端开发服务器会把所有服务请求代理到后端（默认 `http://127.0.0.1:8002`，可用 `KNOWLEDGE_API_URL` 改写），所以先启动后端。生产环境不运行开发服务器：构建的 `web/dist` 作为 `knowledge-web` 静态制品单独部署，由 Nginx 提供页面并把 API 请求代理到后端。
 
 如果 5183 端口被占用：
 
@@ -123,11 +118,11 @@ scripts/starter.sh status
 scripts/starter.sh stop
 ```
 
-长期运行和扩展后台处理能力建议使用 systemd，参见 `docs/Worker部署与扩缩容建议.md`。
+长期运行和扩展后台处理能力建议使用 systemd，参见 `docs/operations/Worker部署与扩缩容建议.md`。
 
 ### 6. 创建离线部署包
 
-构建前端并生成不依赖 Docker 的归档包（含 `knowledge/`、`migrations/`、`config/`、`web/dist/`）：
+生成不依赖 Docker 的发布制品：`knowledge` service 和 `knowledge-web` static 分别记录在同一 manifest，可独立升级和回滚。
 
 ```bash
 scripts/package.sh
@@ -141,4 +136,7 @@ scripts/package.sh
 
 ## 更多文档
 
-详细设计与接口文档在 `docs/` 目录。
+- [核心概念](docs/architecture/核心概念.md)：项目中的领域对象、角色和术语，第一次接触本项目建议先读。
+- [系统架构](docs/architecture/系统架构.md)：组件、与社区产品的分工和主要数据流。
+- [数据模型](docs/architecture/数据模型.md)：数据库表、关系、约束和状态取值。
+- [文档目录](docs/README.md)：全部设计、接口、运维文档的入口。
